@@ -39,9 +39,17 @@
             width: 100%;
             height: 100%;
             z-index: 1;
+            pointer-events: auto;
+            transition: pointer-events 0s 1.5s; /* Delay pointer-events change */
         }
 
-        /* Street View Layer */
+        /* Disable globe interactions when Street View is active */
+        #cesiumContainer.inactive {
+            pointer-events: none !important;
+            transition: pointer-events 0s; /* Immediate change */
+        }
+
+        /* Street View Layer - Simple and Clean */
         #streetViewLayer {
             position: absolute;
             top: 0;
@@ -50,27 +58,20 @@
             height: 100%;
             z-index: 2;
             opacity: 0;
-            visibility: hidden;
             transition: opacity 1.5s ease-in-out;
             pointer-events: none;
+            visibility: hidden;
         }
 
         #streetViewLayer.active {
             opacity: 1;
-            visibility: visible;
             pointer-events: auto;
-            z-index: 50; /* Higher z-index when active */
+            visibility: visible;
         }
 
         #streetView {
             width: 100%;
             height: 100%;
-            pointer-events: auto;
-        }
-
-        /* Make sure Street View canvas is interactive */
-        #streetView * {
-            pointer-events: auto !important;
         }
 
         /* UI Controls */
@@ -129,6 +130,57 @@
             box-shadow: 0 0 30px rgba(255, 0, 85, 0.2);
             pointer-events: none;
         }
+
+        /* Mouse Controls Guide */
+        #mouseGuide {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #ff0055;
+            padding: 20px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+            color: #ff0055;
+            box-shadow: 0 0 30px rgba(255, 0, 85, 0.2);
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            max-width: 300px;
+        }
+
+        #mouseGuide.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #mouseGuide h3 {
+            margin: 0 0 15px 0;
+            font-family: 'Orbitron', monospace;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #mouseGuide ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #mouseGuide li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        #mouseGuide li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+        }
     </style>
 </head>
 <body>
@@ -148,6 +200,18 @@
 
     <!-- Info Display -->
     <div id="info">Click on the globe to select a location</div>
+
+    <!-- Mouse Controls Guide -->
+    <div id="mouseGuide">
+        <h3>🖱️ Mouse Controls</h3>
+        <ul>
+            <li>Drag: Look around</li>
+            <li>Click arrows: Move forward</li>
+            <li>Scroll wheel: Zoom in/out</li>
+            <li>Double-click: Jump to location</li>
+            <li>Arrow keys: Navigate</li>
+        </ul>
+    </div>
 
     <script>
         // Configuration
@@ -218,25 +282,35 @@
             try {
                 const container = document.getElementById('streetView');
                 
+                if (!container) {
+                    throw new Error("Street View container not found");
+                }
+
+                // Ensure google.maps is fully loaded
+                if (!google?.maps?.StreetViewPanorama) {
+                    throw new Error("Google Maps StreetViewPanorama not available");
+                }
+
                 STATE.streetView = new google.maps.StreetViewPanorama(container, {
                     position: { lat: 35.6762, lng: 139.6503 },
                     pov: { heading: 0, pitch: 0 },
                     zoom: 1,
-                    addressControl: false,
-                    fullscreenControl: true,
-                    panControl: true,
-                    enableCloseButton: false,
+                    disableDefaultUI: true,
                     linksControl: true,
-                    panControlOptions: {
-                        position: google.maps.ControlPosition.RIGHT_CENTER
-                    },
-                    zoomControl: true,
                     clickToGo: true,
-                    scrollwheel: true,
-                    disableDoubleClickZoom: false,
-                    imageDateControl: true,
+                    showRoadLabels: false,
                     motionTracking: false,
                     motionTrackingControl: false
+                });
+
+                // Event listeners
+                STATE.streetView.addListener('position_changed', () => {
+                    const pos = STATE.streetView.getPosition();
+                    console.log(`📍 Position changed: ${pos.lat()}, ${pos.lng()}`);
+                });
+                
+                STATE.streetView.addListener('pov_changed', () => {
+                    console.log('👁️ View angle changed');
                 });
 
                 STATE.streetViewService = new google.maps.StreetViewService();
@@ -284,22 +358,20 @@
 
         // Enter Street View
         async function enterStreetView() {
-            console.log("🔍 Teleporting to Shibuya Station...");
-            
             if (!STATE.streetViewService) {
                 console.error("❌ Street View Service not initialized");
                 alert("Street View service not ready. Please wait and try again.");
                 return;
             }
 
-            // Shibuya Station coordinates
-            const shibuyaStation = { lat: 35.6580, lng: 139.7016 };
-            console.log(`📍 Destination: Shibuya Station (${shibuyaStation.lat}, ${shibuyaStation.lng})`);
+            // Use selected location or default to Shibuya
+            const targetLocation = STATE.selectedLocation || { lat: 35.6580, lng: 139.7016 };
+            console.log(`🔍 Entering Street View at: ${targetLocation.lat.toFixed(4)}, ${targetLocation.lng.toFixed(4)}`);
 
-            // Check if Street View is available at Shibuya
+            // Check if Street View is available at the location
             STATE.streetViewService.getPanorama(
                 {
-                    location: shibuyaStation,
+                    location: targetLocation,
                     radius: 50,
                     source: google.maps.StreetViewSource.OUTDOOR
                 },
@@ -313,28 +385,46 @@
                             lng: data.location.latLng.lng()
                         };
 
-                        console.log(`✅ Arrived at Shibuya: ${svPosition.lat}, ${svPosition.lng}`);
+                        console.log(`✅ Arrived at location: ${svPosition.lat}, ${svPosition.lng}`);
 
-                        STATE.streetView.setPosition(svPosition);
-                        STATE.streetView.setPov({ 
-                            heading: 90, // Face towards crossing
-                            pitch: 0 
+                        // First, fly camera down to ground level for dramatic transition
+                        STATE.viewer.camera.flyTo({
+                            destination: Cesium.Cartesian3.fromDegrees(
+                                svPosition.lng, 
+                                svPosition.lat, 
+                                100  // Very close to ground
+                            ),
+                            duration: 2,
+                            complete: () => {
+                                // After camera reaches ground, activate Street View
+                                STATE.streetView.setPosition(svPosition);
+                                STATE.streetView.setPov({ 
+                                    heading: 90, // Face towards crossing
+                                    pitch: 0 
+                                });
+
+                                // Fade to Street View
+                                document.getElementById('streetViewLayer').classList.add('active');
+                                document.getElementById('cesiumContainer').classList.add('inactive');
+                                STATE.inStreetView = true;
+
+                                // Update UI (moved inside callback)
+                                document.getElementById('enterStreetViewBtn').style.display = 'none';
+                                document.getElementById('exitStreetViewBtn').style.display = 'block';
+                                document.getElementById('info').textContent = 
+                                    `📍 Street View: ${svPosition.lat.toFixed(4)}, ${svPosition.lng.toFixed(4)}`;
+                                
+                                // Show mouse controls guide
+                                document.getElementById('mouseGuide').classList.add('visible');
+
+                                console.log("🎬 Transition to Street View complete!");
+                            }
                         });
 
-                        // Transition to Street View
-                        document.getElementById('streetViewLayer').classList.add('active');
-                        STATE.inStreetView = true;
-
-                        // Update UI
-                        document.getElementById('enterStreetViewBtn').style.display = 'none';
-                        document.getElementById('exitStreetViewBtn').style.display = 'block';
-                        document.getElementById('info').textContent = 
-                            `📍 Shibuya Station, Tokyo`;
-
-                        console.log("✅ Welcome to Shibuya! 🗼");
+                        console.log("✅ Welcome to Street View! 🗺️");
                     } else {
-                        console.warn(`⚠️ Could not load Shibuya Street View. Status: ${status}`);
-                        alert("Failed to load Shibuya Station. Please try again.");
+                        console.warn(`⚠️ Could not load Street View. Status: ${status}`);
+                        alert("Street View not available at this location. Try selecting a different spot on major streets or landmarks.");
                     }
                 }
             );
@@ -344,11 +434,15 @@
         function exitStreetView() {
             // Transition back to globe
             document.getElementById('streetViewLayer').classList.remove('active');
+            document.getElementById('cesiumContainer').classList.remove('inactive');
             STATE.inStreetView = false;
 
             // Update UI
             document.getElementById('enterStreetViewBtn').style.display = 'block';
             document.getElementById('exitStreetViewBtn').style.display = 'none';
+            
+            // Hide mouse controls guide
+            document.getElementById('mouseGuide').classList.remove('visible');
             
             if (STATE.selectedLocation) {
                 document.getElementById('info').textContent = 
