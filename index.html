@@ -9,8 +9,8 @@
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     
-    <!-- Google Maps -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAvCO_bcpW5Zuh-Wmizb9AuH8_RxHl6BVY"></script>
+    <!-- Configuration -->
+    <script src="config.js"></script>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
@@ -213,11 +213,18 @@
         </ul>
     </div>
 
+    <!-- Google Maps (loaded dynamically) -->
     <script>
-        // Configuration
-        const CONFIG = {
-            CESIUM_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkZDliZmU3YS01YmQ3LTQ2ZGMtOTI4Yy1lZTMzZDMxOWIwMDUiLCJpZCI6MzY2NzI0LCJpYXQiOjE3NjQ4NjU3NDV9.Ajfr3pZSAk1F4xg0M2kyLgkEAFYmrYyCSlUPuPmvYQ4"
-        };
+        // Load Google Maps API dynamically with key from config
+        if (typeof CONFIG !== 'undefined' && CONFIG.GOOGLE_MAPS_KEY) {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${CONFIG.GOOGLE_MAPS_KEY}`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        } else {
+            console.error('Google Maps API key not found in config.js');
+        }
 
         // State
         const STATE = {
