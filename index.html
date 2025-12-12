@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Street View Treasure Hunt - Trail Mode</title>
+  
+  <!--
+    SETUP INSTRUCTIONS:
+    1. TODO: Insert your Google Maps API key in the script tag below (replace YOUR_API_KEY_HERE)
+    2. Serve this file via a local web server, e.g.:
+       python -m http.server 8000
+       Then open: http://localhost:8000/index.html
+    3. Ensure verse_data_enhanced.js is in the same directory (optional - fallback data included)
+    4. Ensure assets/ folder contains: boom.wav, collect.wav, warp.wav
+  -->
+  
+  <!-- TODO: Insert your Google Maps API key below -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=geometry" defer></script>
+  <script src="verse_data_enhanced.js" defer></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      background: #000;
+    }
+    
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Toolbar */
+    #toolbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      padding: 12px 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+    }
+    
+    #toolbar button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    #toolbar button:focus {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
+    
+    #btn-init {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    #btn-init:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    #btn-trail {
+      background: #d4af37;
+      color: #1a1a2e;
+    }
+    
+    #btn-trail:hover:not(:disabled) {
+      background: #f0c945;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    }
+    
+    #btn-trail.active {
+      background: #b8860b;
+      color: white;
+      box-shadow: 0 0 20px rgba(184, 134, 11, 0.6);
+    }
+    
+    #btn-trail:disabled {
+      background: #555;
+      color: #999;
+      cursor: not-allowed;
+    }
+    
+    .status-info {
+      color: white;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .status-info strong {
+      color: #d4af37;
+    }
+    
+    /* Street View */
+    #streetview {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    
+    /* Minimap */
+    #minimap {
+      position: fixed;
+      bottom: 120px;
+      left: 20px;
+      width: 200px;
+      height: 200px;
+      z-index: 100;
+      border: 3px solid #d4af37;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    }
+    
+    /* Verse Bar */
+    #verse-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 15px 20px;
+      backdrop-filter: blur(10px);
+      border-top: 2px solid #d4af37;
+    }
+    
+    #verse-text {
+      font-size: 14px;
+      line-height: 1.6;
+      font-style: italic;
+      text-align: center;
+    }
+    
+    /* Spinner */
+    #spinner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2000;
+      background: rgba(0, 0, 0, 0.8);
+      color: #d4af37;
+      padding: 30px 50px;
+      border-radius: 12px;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+    }
+    
+    #spinner::after {
+      content: '';
+      display: block;
+      width: 40px;
+      height: 40px;
+      margin: 15px auto 0;
+      border: 4px solid #d4af37;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    #spinner[hidden] {
+      display: none;
+    }
+    
+    /* Toast */
+    #toast {
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      z-index: 2000;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 8px;
+      border-left: 4px solid #d4af37;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      max-width: 300px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    
+    #toast:not([hidden]) {
+      opacity: 1;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      #toolbar {
+        padding: 10px;
+        gap: 8px;
+      }
+      
+      #toolbar button {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      
+      .status-info {
+        font-size: 11px;
+      }
+      
+      #minimap {
+        width: 150px;
+        height: 150px;
+        bottom: 100px;
+        left: 10px;
+      }
+      
+      #verse-bar {
+        padding: 10px 15px;
+      }
+      
+      #verse-text {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="toolbar">
+      <button id="btn-init" aria-label="Initiate Sequence">🎯 INITIATE SEQUENCE</button>
+      <button id="btn-trail" aria-label="Toggle Trail Mode" disabled>🎬 TRAIL MODE</button>
+      <div class="status-info">
+        <div><strong>Location:</strong> <span id="status-name">—</span></div>
+        <div><strong>Year:</strong> <span id="status-year">—</span></div>
+        <div><strong>Distance:</strong> <span id="status-distance">—</span></div>
+      </div>
+      <div class="status-info">
+        <div id="status-clue">Clue: —</div>
+      </div>
+    </div>
+    
+    <div id="streetview"></div>
+    <div id="minimap"></div>
+    
+    <div id="verse-bar">
+      <div id="verse-text">Press "INITIATE SEQUENCE" to begin your journey...</div>
+    </div>
+    
+    <div id="spinner" hidden>
+      <div>Loading...</div>
+    </div>
+    
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+  </div>
+  
+  <script>
+    // ========================================
+    // GLOBAL STATE
+    // ========================================
+    const STATE = {
+      streetView: null,           // google.maps.StreetViewPanorama
+      map: null,                  // google.maps.Map (minimap)
+      directionsService: null,    // google.maps.DirectionsService
+      streetViewService: null,    // google.maps.StreetViewService
+      currentPos: { lat: null, lng: null }, // last known panorama position
+      activeLoot: null,           // selected item from HUNT_LOCATIONS_WITH_PATHS
+      trailModeActive: false,     // whether trail mode is on
+      routePolyline: null,        // google.maps.Polyline for route visualization
+      waypoints: [],              // Array<{ lat: number, lng: number }>
+      waypointIndex: 0,           // current waypoint index while moving
+      advanceTimer: null,         // timer/interval ID for movement loop
+      distanceTimer: null,        // timer for distance updates
+      markers: {                  // minimap markers
+        me: null,                 // current position marker
+        target: null              // destination marker
+      }
+    };
+    
+    // ========================================
+    // FALLBACK DATA
+    // ========================================
+    const FALLBACK_LOCATIONS = [
+      {
+        name: "Eiffel Tower",
+        coords: { lat: 48.8584, lng: 2.2945 },
+        year: "1889 AD",
+        history: "An iron lattice tower on the Champ de Mars in Paris, France.",
+        clue: "The Iron Lady watches over the city of lights",
+        verse: "Built for the World's Fair, a marvel of engineering that pierced the Parisian sky, standing as a testament to human ambition and industrial prowess."
+      },
+      {
+        name: "Colosseum",
+        coords: { lat: 41.8902, lng: 12.4922 },
+        year: "80 AD",
+        history: "An ancient amphitheater in the center of Rome, Italy.",
+        clue: "Where gladiators once fought for glory",
+        verse: "In the heart of ancient Rome, this grand arena witnessed the clash of warriors and the roar of crowds, a monument to an empire's might and spectacle."
+      },
+      {
+        name: "Statue of Liberty",
+        coords: { lat: 40.6892, lng: -74.0445 },
+        year: "1886 AD",
+        history: "A colossal neoclassical sculpture on Liberty Island in New York Harbor.",
+        clue: "A torch-bearing symbol of freedom in the New World",
+        verse: "Gift of friendship from France, she stands as a beacon of hope and liberty, welcoming travelers to a land of opportunity and dreams."
+      }
+    ];
+    
+    // ========================================
+    // AUDIO PRELOAD
+    // ========================================
+    const SOUNDS = {
+      boom: new Audio('assets/boom.wav'),
+      collect: new Audio('assets/collect.wav'),
+      warp: new Audio('assets/warp.wav')
+    };
+    
+    // ========================================
+    // HELPER UTILITIES
+    // ========================================
+    
+    function clamp(val, min, max) {
+      return Math.min(Math.max(val, min), max);
+    }
+    
+    function haversineDistance(lat1, lng1, lat2, lng2) {
+      const R = 6371e3; // Earth radius in meters
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lng2 - lng1) * Math.PI / 180;
+      
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      
+      return R * c;
+    }
+    
+    function showToast(message, timeoutMs = 2500) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.hidden = false;
+      
+      setTimeout(() => {
+        toast.hidden = true;
+      }, timeoutMs);
+    }
+    
+    function setLoading(loading) {
+      document.getElementById('spinner').hidden = !loading;
+    }
+    
+    function playSound(name) {
+      if (SOUNDS[name]) {
+        const audio = SOUNDS[name];
+        audio.currentTime = 0;
+        audio.play().catch(err => {
+          console.info(`Audio playback prevented for ${name}:`, err.message);
+        });
+      }
+    }
+    
+    function setUIEnabled(enabled) {
+      document.getElementById('btn-trail').disabled = !enabled;
+    }
+    
+    function setTrailButtonActive(active) {
+      const btn = document.getElementById('btn-trail');
+      if (active) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    }
+    
+    // ========================================
+    // CORE FUNCTIONS
+    // ========================================
+    
+    async function startLevel() {
+      console.log('Starting new level...');
+      
+      // Get data source
+      const locations = window.HUNT_LOCATIONS_WITH_PATHS || FALLBACK_LOCATIONS;
+      
+      // Randomly select target
+      STATE.activeLoot = locations[Math.floor(Math.random() * locations.length)];
+      console.log('Level started at:', STATE.activeLoot.name);
+      
+      // Update UI
+      document.getElementById('status-name').textContent = STATE.activeLoot.name;
+      document.getElementById('status-year').textContent = STATE.activeLoot.year;
+      document.getElementById('status-clue').textContent = 'Clue: ' + STATE.activeLoot.clue;
+      document.getElementById('verse-text').textContent = STATE.activeLoot.verse;
+      
+      // Find panorama near target
+      setLoading(true);
+      const pano = await findNearestPanoTo(STATE.activeLoot.coords.lat, STATE.activeLoot.coords.lng, 250)
+                  || await findNearestPanoTo(STATE.activeLoot.coords.lat, STATE.activeLoot.coords.lng, 500)
+                  || await findNearestPanoTo(STATE.activeLoot.coords.lat, STATE.activeLoot.coords.lng, 1000);
+      
+      setLoading(false);
+      
+      if (!pano) {
+        showToast('No Street View near this location');
+        playSound('boom');
+        return;
+      }
+      
+      // Set Street View position
+      STATE.streetView.setPano(pano.location.pano);
+      STATE.streetView.setPov({ heading: 0, pitch: 0 });
+      STATE.streetView.setZoom(1);
+      
+      // Update current position
+      STATE.currentPos.lat = pano.location.latLng.lat();
+      STATE.currentPos.lng = pano.location.latLng.lng();
+      
+      // Update minimap
+      STATE.map.setCenter(STATE.currentPos);
+      updateMarkers();
+      
+      // Enable trail button
+      setUIEnabled(true);
+      
+      // Start distance updates
+      if (STATE.distanceTimer) {
+        clearInterval(STATE.distanceTimer);
+      }
+      STATE.distanceTimer = setInterval(updateDistanceUI, 1000);
+      updateDistanceUI();
+      
+      showToast(`Journey to ${STATE.activeLoot.name} begins!`);
+    }
+    
+    async function toggleTrailMode() {
+      if (!STATE.trailModeActive) {
+        // Starting Trail Mode
+        if (!STATE.streetView || !STATE.activeLoot) {
+          showToast('Please start a level first');
+          playSound('boom');
+          return;
+        }
+        
+        console.log('Activating Trail Mode...');
+        const success = await calculateRoute();
+        
+        if (success) {
+          drawRoute();
+          advanceAlongRoute();
+          setTrailButtonActive(true);
+          showToast('Trail Mode activated');
+        } else {
+          showToast('Unable to calculate route');
+          playSound('boom');
+          STATE.trailModeActive = false;
+        }
+      } else {
+        // Stopping Trail Mode
+        console.log('Deactivating Trail Mode...');
+        stopTrailMode();
+      }
+    }
+    
+    function stopTrailMode() {
+      if (STATE.advanceTimer) {
+        clearInterval(STATE.advanceTimer);
+        STATE.advanceTimer = null;
+      }
+      
+      if (STATE.routePolyline) {
+        STATE.routePolyline.setMap(null);
+        STATE.routePolyline = null;
+      }
+      
+      STATE.waypoints = [];
+      STATE.waypointIndex = 0;
+      STATE.trailModeActive = false;
+      setTrailButtonActive(false);
+      showToast('Trail Mode stopped');
+    }
+    
+    async function calculateRoute() {
+      setLoading(true);
+      console.log('Calculating route...');
+      
+      return new Promise((resolve) => {
+        STATE.directionsService.route({
+          origin: STATE.currentPos,
+          destination: STATE.activeLoot.coords,
+          travelMode: google.maps.TravelMode.WALKING
+        }, (result, status) => {
+          setLoading(false);
+          
+          if (status === google.maps.DirectionsStatus.OK) {
+            // Decode polyline from overview_path
+            const route = result.routes[0];
+            const path = route.overview_path;
+            
+            if (path && path.length >= 2) {
+              STATE.waypoints = path.map(point => ({
+                lat: point.lat(),
+                lng: point.lng()
+              }));
+              STATE.waypointIndex = 0;
+              console.log(`Route calculated with ${STATE.waypoints.length} points`);
+              resolve(true);
+            } else {
+              console.error('Route has too few points');
+              resolve(false);
+            }
+          } else {
+            console.error('DirectionsService error:', status);
+            resolve(false);
+          }
+        });
+      });
+    }
+    
+    function drawRoute() {
+      // Remove existing polyline
+      if (STATE.routePolyline) {
+        STATE.routePolyline.setMap(null);
+      }
+      
+      // Create new polyline
+      STATE.routePolyline = new google.maps.Polyline({
+        path: STATE.waypoints.map(p => ({ lat: p.lat, lng: p.lng })),
+        map: STATE.map,
+        strokeColor: '#1e90ff',
+        strokeOpacity: 0.9,
+        strokeWeight: 4
+      });
+      
+      // Fit bounds to show route
+      const bounds = new google.maps.LatLngBounds();
+      bounds.extend(STATE.currentPos);
+      bounds.extend(STATE.activeLoot.coords);
+      STATE.waypoints.forEach(wp => bounds.extend(wp));
+      STATE.map.fitBounds(bounds);
+    }
+    
+    function advanceAlongRoute() {
+      STATE.trailModeActive = true;
+      
+      STATE.advanceTimer = setInterval(async () => {
+        // Check if we've reached the end
+        if (STATE.waypointIndex >= STATE.waypoints.length) {
+          console.log('Reached end of waypoints');
+          stopTrailMode();
+          return;
+        }
+        
+        // Check if we're close enough to target
+        const distToTarget = haversineDistance(
+          STATE.currentPos.lat,
+          STATE.currentPos.lng,
+          STATE.activeLoot.coords.lat,
+          STATE.activeLoot.coords.lng
+        );
+        
+        if (distToTarget <= 25) {
+          console.log('Arrived at destination');
+          stopTrailMode();
+          showToast('🎉 Arrived at destination!', 3000);
+          playSound('collect');
+          return;
+        }
+        
+        // Get next waypoint
+        const wp = STATE.waypoints[STATE.waypointIndex];
+        console.log(`Advancing to waypoint ${STATE.waypointIndex + 1}/${STATE.waypoints.length}`);
+        
+        // Find panorama near waypoint
+        const pano = await findNearestPanoTo(wp.lat, wp.lng, 60);
+        
+        if (!pano) {
+          console.log('Panorama not found near waypoint—skipping');
+          STATE.waypointIndex++;
+          return;
+        }
+        
+        // Update Street View
+        STATE.streetView.setPano(pano.location.pano);
+        
+        // Calculate heading to next waypoint or target
+        let targetLat, targetLng;
+        if (STATE.waypointIndex + 1 < STATE.waypoints.length) {
+          targetLat = STATE.waypoints[STATE.waypointIndex + 1].lat;
+          targetLng = STATE.waypoints[STATE.waypointIndex + 1].lng;
+        } else {
+          targetLat = STATE.activeLoot.coords.lat;
+          targetLng = STATE.activeLoot.coords.lng;
+        }
+        
+        const heading = google.maps.geometry.spherical.computeHeading(
+          new google.maps.LatLng(pano.location.latLng.lat(), pano.location.latLng.lng()),
+          new google.maps.LatLng(targetLat, targetLng)
+        );
+        
+        STATE.streetView.setPov({ heading: heading, pitch: 0 });
+        
+        // Update current position
+        STATE.currentPos.lat = pano.location.latLng.lat();
+        STATE.currentPos.lng = pano.location.latLng.lng();
+        
+        // Update UI
+        updateDistanceUI();
+        updateMarkers();
+        
+        // Play warp sound
+        playSound('warp');
+        
+        // Move to next waypoint
+        STATE.waypointIndex++;
+        
+      }, 1200); // Advance every 1.2 seconds
+    }
+    
+    function findNearestPanoTo(lat, lng, radius = 50) {
+      return new Promise((resolve) => {
+        STATE.streetViewService.getPanorama({
+          location: { lat, lng },
+          radius: radius,
+          preference: google.maps.StreetViewPreference.NEAREST
+        }, (data, status) => {
+          if (status === google.maps.StreetViewStatus.OK) {
+            resolve(data);
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    }
+    
+    function updateDistanceUI() {
+      if (!STATE.activeLoot || !STATE.currentPos.lat) {
+        document.getElementById('status-distance').textContent = '—';
+        return;
+      }
+      
+      const dist = haversineDistance(
+        STATE.currentPos.lat,
+        STATE.currentPos.lng,
+        STATE.activeLoot.coords.lat,
+        STATE.activeLoot.coords.lng
+      );
+      
+      let distText;
+      if (dist < 1000) {
+        distText = Math.round(dist) + ' m';
+      } else {
+        distText = (dist / 1000).toFixed(1) + ' km';
+      }
+      
+      document.getElementById('status-distance').textContent = distText;
+    }
+    
+    function updateMarkers() {
+      // Create or update "me" marker
+      if (!STATE.markers.me) {
+        STATE.markers.me = new google.maps.Marker({
+          map: STATE.map,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#4285F4',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2
+          }
+        });
+      }
+      STATE.markers.me.setPosition(STATE.currentPos);
+      
+      // Create or update "target" marker
+      if (!STATE.markers.target) {
+        STATE.markers.target = new google.maps.Marker({
+          map: STATE.map,
+          icon: {
+            path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+            scale: 6,
+            fillColor: '#EA4335',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2
+          }
+        });
+      }
+      
+      if (STATE.activeLoot) {
+        STATE.markers.target.setPosition(STATE.activeLoot.coords);
+      }
+    }
+    
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+    
+    function initApp() {
+      console.log('Initializing app...');
+      
+      // Check if Google Maps is loaded
+      if (typeof google === 'undefined' || !google.maps) {
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:20px;text-align:center;padding:20px;color:white;">Google Maps failed to load. Please insert your API key in the script tag.</div>';
+        return;
+      }
+      
+      // Initialize Google Maps services
+      STATE.directionsService = new google.maps.DirectionsService();
+      STATE.streetViewService = new google.maps.StreetViewService();
+      
+      // Initialize minimap
+      STATE.map = new google.maps.Map(document.getElementById('minimap'), {
+        mapTypeId: 'roadmap',
+        zoom: 15,
+        center: { lat: 0, lng: 0 },
+        disableDefaultUI: true
+      });
+      
+      // Initialize Street View
+      STATE.streetView = new google.maps.StreetViewPanorama(
+        document.getElementById('streetview'),
+        {
+          position: { lat: 0, lng: 0 },
+          pov: { heading: 0, pitch: 0 },
+          zoom: 1,
+          visible: true,
+          disableDefaultUI: false
+        }
+      );
+      
+      // Listen to position changes
+      STATE.streetView.addListener('position_changed', () => {
+        const pos = STATE.streetView.getPosition();
+        if (pos) {
+          STATE.currentPos.lat = pos.lat();
+          STATE.currentPos.lng = pos.lng();
+          updateMarkers();
+          updateDistanceUI();
+        }
+      });
+      
+      // Button event listeners
+      document.getElementById('btn-init').addEventListener('click', startLevel);
+      document.getElementById('btn-trail').addEventListener('click', toggleTrailMode);
+      
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        if (e.key.toLowerCase() === 'i') {
+          document.getElementById('btn-init').click();
+        } else if (e.key.toLowerCase() === 't') {
+          if (!document.getElementById('btn-trail').disabled) {
+            document.getElementById('btn-trail').click();
+          }
+        }
+      });
+      
+      console.log('App initialized successfully');
+      showToast('Welcome! Press "INITIATE SEQUENCE" to start', 3000);
+    }
+    
+    // Wait for DOM and Google Maps to load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        if (typeof google !== 'undefined' && google.maps) {
+          initApp();
+        } else {
+          window.addEventListener('load', initApp);
+        }
+      });
+    } else {
+      if (typeof google !== 'undefined' && google.maps) {
+        initApp();
+      } else {
+        window.addEventListener('load', initApp);
+      }
+    }
+  </script>
+</body>
+</html>

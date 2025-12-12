@@ -1,0 +1,20 @@
+# API Keys and sensitive data
+*_api_key*
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.log
+*.tmp
+tmp_*
