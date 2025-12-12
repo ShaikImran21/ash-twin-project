@@ -1,6 +1,8 @@
 # API Keys and sensitive data
 *_api_key*
 .env
+Secret.txt
+secret.txt
 
 # OS files
 .DS_Store
