@@ -1,106 +1,82 @@
-# Ash Twin Project
+# 🌍 Wanderlust Travel Destinations
 
-A browser-based Google Street View treasure hunt game with automated Trail Mode navigation.
+A beautiful, interactive travel website featuring stunning destinations from around the world.
 
-## Features
+## ✨ Features
 
-- 🗺️ **Street View Navigation**: Explore real-world locations through Google Street View
-- 🎯 **Random Target Selection**: Hunt for historical landmarks from around the world
-- 🎬 **Trail Mode**: Automated route navigation that moves you through Street View
-- 📍 **Live Distance Tracking**: Real-time updates showing your distance to the target
-- 🗺️ **Minimap**: Visual overview with route polyline and position markers
-- 🎵 **Audio Feedback**: Sound effects for actions and arrivals
-- ⌨️ **Keyboard Shortcuts**: Quick access with 'I' (Initiate) and 'T' (Trail Mode)
+- **6 Unique Destinations** - Each with custom color palettes and themes
+- **Interactive Animations** - CSS-powered animations specific to each location
+- **Responsive Design** - Works perfectly on all devices
+- **Modal Details** - Click any destination to see detailed information
+- **Smooth Transitions** - Beautiful animations and effects throughout
 
-## Setup Instructions
+## 🎨 Destinations & Color Themes
 
-### 1. Get a Google Maps API Key
+### 1. Santorini, Greece 🇬🇷
+- **Colors**: Blue & White Mediterranean
+- **Primary**: `#0077BE`
+- **Animation**: Floating buildings and pulsing sun
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the following APIs:
-    - Maps JavaScript API
-    - Street View Static API
-    - Directions API
-4. Create credentials (API Key)
-5. Copy your API key
+### 2. Bali, Indonesia 🇮🇩
+- **Colors**: Tropical Green & Gold
+- **Primary**: `#2D5016`, `#8BC34A`
+- **Animation**: Swaying palm trees and ocean waves
 
-### 2. Configure the Application
+### 3. Iceland 🇮🇸
+- **Colors**: Cool Blues & Aurora Purple
+- **Primary**: `#1A237E`, `#00BCD4`, `#9C27B0`
+- **Animation**: Northern Lights, snowflakes, and mountains
 
-1. Open `index.html` in a text editor
-2. Find the line: `<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=geometry" defer></script>`
-3. Replace `YOUR_API_KEY_HERE` with your actual API key
+### 4. Tokyo, Japan 🇯🇵
+- **Colors**: Neon Pink & Purple
+- **Primary**: `#E91E63`, `#9C27B0`
+- **Animation**: Cyber grid and glowing neon signs
 
-### 3. Add Audio Assets
+### 5. Maldives 🇲🇻
+- **Colors**: Turquoise & Coral
+- **Primary**: `#00BFA5`, `#26C6DA`
+- **Animation**: Swimming fish and rising bubbles
 
-Create an `assets/` folder in the project directory and add these audio files:
+### 6. Machu Picchu, Peru 🇵🇪
+- **Colors**: Earthy Browns & Gold
+- **Primary**: `#5D4037`, `#8D6E63`
+- **Animation**: Mountain peaks, drifting clouds, and rotating sun
 
-- `boom.wav` - Error/failure sound
-- `collect.wav` - Success/arrival sound
-- `warp.wav` - Movement/jump sound
+## 🚀 How to Use
 
-### 4. Serve the Application
+1. Open `index.html` in your browser
+2. Browse the destinations grid
+3. Click any destination card to see details and animations
+4. Press ESC or click outside to close the modal
 
-The app must be served via a web server (not opened directly as a file). Use one of these methods:
-
-**Python (recommended):**
-
-```bash
-python -m http.server 8000
-```
-
-**Node.js (http-server):**
-
-```bash
-npx http-server -p 8000
-```
-
-**PHP:**
-
-```bash
-php -S localhost:8000
-```
-
-Then open: `http://localhost:8000/index.html`
-
-## Project Structure
+## 📁 File Structure
 
 ```
-Ash Twin Project/
-├── index.html              # Main application (single-file)
-├── verse_data_enhanced.js  # Location data (optional - has fallback)
-├── assets/
-│   ├── boom.wav
-│   ├── collect.wav
-│   └── warp.wav
-└── README.md
+travel-destinations/
+├── index.html              # Main HTML structure
+├── styles.css              # All styling and responsive design
+├── destinations-data.js    # Destination information and data
+├── animations.js           # CSS animation generators
+├── script.js              # Main JavaScript functionality
+└── README.md              # This file
 ```
 
-## How to Play
+## 🎯 Next Steps
 
-1. Click **"🎯 INITIATE SEQUENCE"** or press **I** to start
-2. A random historical location will be selected
-3. You'll be placed in Street View near the target
-4. Navigate manually or click **"🎬 TRAIL MODE"** (or press **T**) for automatic navigation
-5. Trail Mode will calculate a walking route and automatically move you toward the target
-6. Reach within 25 meters to complete the hunt!
+- Add a landing/start page with hero animation
+- Integrate booking functionality
+- Add real images for destinations
+- Implement user reviews and ratings
+- Add search and filter functionality
 
-## Keyboard Shortcuts
+## 💡 Technologies Used
 
-- **I** - Start new level (Initiate Sequence)
-- **T** - Toggle Trail Mode on/off
+- Pure HTML5, CSS3, and JavaScript
+- No external dependencies (except Google Fonts)
+- CSS Grid and Flexbox for layouts
+- CSS animations for visual effects
+- Responsive design with media queries
 
-## Technical Details
+---
 
-- **Framework**: Vanilla JavaScript (no dependencies)
-- **APIs**: Google Maps JavaScript API v3
-- **Style**: Inline CSS with responsive design
-- **Browser Compatibility**: Modern browsers with ES6+ support
-
-## Credits
-
-Created as part of the Ash Twin Project treasure hunt series.
-
-## License
-
-[Add your license here]
+**Created with ❤️ for travel enthusiasts**

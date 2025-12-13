@@ -189,9 +189,12 @@
                 clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%);
                 box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
                 transition: all 0.3s;
-                position: relative;
+                position: fixed;
+                top: 20px;
+                left: 20px;
                 overflow: hidden;
                 pointer-events: auto;
+                z-index: 1000;
             }
 
             .trail-mode-btn:hover {
@@ -639,6 +642,192 @@
                 transform: translateY(0);
             }
 
+            /* === COUPON REVEAL OVERLAY === */
+            #coupon-reveal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.98);
+                z-index: 3000;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                backdrop-filter: blur(15px);
+                animation: coupon-overlay-appear 0.5s ease-out;
+            }
+
+            @keyframes coupon-overlay-appear {
+                0% {
+                    opacity: 0;
+                }
+                100% {
+                    opacity: 1;
+                }
+            }
+
+            .coupon-card {
+                background: linear-gradient(135deg, #1a0033 0%, #330066 100%);
+                border: 4px solid var(--nomai-gold);
+                width: 90%;
+                max-width: 500px;
+                padding: 40px;
+                text-align: center;
+                box-shadow: 
+                    0 0 80px rgba(255, 204, 0, 0.6),
+                    inset 0 0 60px rgba(255, 204, 0, 0.2);
+                clip-path: polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%);
+                animation: coupon-card-reveal 0.8s ease-out 0.3s both;
+                position: relative;
+                overflow: hidden;
+            }
+
+            @keyframes coupon-card-reveal {
+                0% {
+                    transform: rotateY(90deg) scale(0.5);
+                    opacity: 0;
+                }
+                50% {
+                    transform: rotateY(45deg) scale(0.8);
+                }
+                100% {
+                    transform: rotateY(0deg) scale(1);
+                    opacity: 1;
+                }
+            }
+
+            .coupon-card::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: linear-gradient(
+                    45deg,
+                    transparent 30%,
+                    rgba(255, 255, 255, 0.1) 50%,
+                    transparent 70%
+                );
+                animation: coupon-shine 2s infinite;
+            }
+
+            @keyframes coupon-shine {
+                0% {
+                    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+                }
+                100% {
+                    transform: translateX(100%) translateY(100%) rotate(45deg);
+                }
+            }
+
+            .coupon-header {
+                color: var(--nomai-gold);
+                font-family: 'Orbitron', monospace;
+                font-size: 28px;
+                margin-bottom: 20px;
+                text-shadow: 0 0 20px var(--nomai-gold);
+                animation: pulse-glow 1.5s ease-in-out infinite;
+            }
+
+            @keyframes pulse-glow {
+                0%, 100% {
+                    text-shadow: 0 0 20px var(--nomai-gold);
+                }
+                50% {
+                    text-shadow: 0 0 40px var(--nomai-gold), 0 0 60px var(--nomai-gold);
+                }
+            }
+
+            .coupon-emoji {
+                font-size: 120px;
+                display: block;
+                margin: 30px 0;
+                animation: bounce-in 0.6s ease-out 0.8s both;
+                filter: drop-shadow(0 0 20px rgba(255, 204, 0, 0.8));
+            }
+
+            @keyframes bounce-in {
+                0% {
+                    transform: scale(0);
+                    opacity: 0;
+                }
+                50% {
+                    transform: scale(1.2);
+                }
+                100% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+
+            .coupon-name {
+                font-family: 'Orbitron', monospace;
+                font-size: 32px;
+                color: white;
+                margin: 20px 0;
+                text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+            }
+
+            .coupon-rarity {
+                font-size: 18px;
+                padding: 10px 20px;
+                border-radius: 20px;
+                display: inline-block;
+                margin: 15px 0;
+                font-weight: bold;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+
+            .coupon-rarity.legendary {
+                background: linear-gradient(135deg, #ff0055, #ff8800);
+                color: white;
+                box-shadow: 0 0 30px rgba(255, 0, 85, 0.6);
+            }
+
+            .coupon-rarity.epic {
+                background: linear-gradient(135deg, #9d00ff, #00ffff);
+                color: white;
+                box-shadow: 0 0 30px rgba(157, 0, 255, 0.6);
+            }
+
+            .coupon-rarity.rare {
+                background: linear-gradient(135deg, #0099ff, #00ffcc);
+                color: white;
+                box-shadow: 0 0 30px rgba(0, 153, 255, 0.6);
+            }
+
+            .coupon-message {
+                font-size: 16px;
+                color: #aaa;
+                margin: 25px 0;
+                line-height: 1.6;
+            }
+
+            .coupon-continue-btn {
+                padding: 15px 40px;
+                background: var(--nomai-gold);
+                color: #000;
+                font-family: 'Orbitron', monospace;
+                font-weight: 700;
+                font-size: 18px;
+                border: none;
+                cursor: pointer;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                margin-top: 20px;
+                box-shadow: 0 0 30px rgba(255, 204, 0, 0.5);
+                transition: all 0.3s;
+            }
+
+            .coupon-continue-btn:hover {
+                background: #fff;
+                box-shadow: 0 0 50px rgba(255, 204, 0, 0.8);
+                transform: scale(1.05);
+            }
+
             /* === UTILITIES === */
             .hidden {
                 display: none !important;
@@ -754,15 +943,15 @@
 
         <!-- UI Overlay -->
         <div id="ui-layer">
+            <button
+                class="trail-mode-btn"
+                id="trail-btn"
+                onclick="toggleTrailMode()"
+                style="display: none"
+            >
+                <span class="btn-text">🎬 TRAIL MODE</span>
+            </button>
             <div class="warp-container" style="display: flex; gap: 15px; align-items: center">
-                <button
-                    class="trail-mode-btn"
-                    id="trail-btn"
-                    onclick="toggleTrailMode()"
-                    style="display: none"
-                >
-                    <span class="btn-text">🎬 TRAIL MODE</span>
-                </button>
                 <div class="warp-switch" onclick="window.startGame()">
                     <span class="nomai-text">INITIATE SEQUENCE</span>
                 </div>
@@ -779,6 +968,23 @@
         </div>
 
         <!-- Collection Modal -->
+        <!-- Coupon Reveal Overlay -->
+        <div id="coupon-reveal" class="hidden">
+            <div class="coupon-card">
+                <div class="coupon-header">🎁 BONUS COUPON UNLOCKED! 🎁</div>
+                <span class="coupon-emoji" id="coupon-emoji">🎁</span>
+                <div class="coupon-name" id="coupon-name">Special Loot</div>
+                <div class="coupon-rarity legendary" id="coupon-rarity">LEGENDARY</div>
+                <div class="coupon-message">
+                    You found a special treasure!<br>
+                    This rare item has been added to your collection.
+                </div>
+                <button class="coupon-continue-btn" onclick="window.closeCouponReveal()">
+                    ✨ CONTINUE
+                </button>
+            </div>
+        </div>
+
         <div id="chrono-modal" class="hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -816,7 +1022,7 @@
                     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkZDliZmU3YS01YmQ3LTQ2ZGMtOTI4Yy1lZTMzZDMxOWIwMDUiLCJpZCI6MzY2NzI0LCJpYXQiOjE3NjQ4NjU3NDV9.Ajfr3pZSAk1F4xg0M2kyLgkEAFYmrYyCSlUPuPmvYQ4', // Get free token from https://cesium.com/ion/signup
                 GOOGLE_MAPS_KEY: 'AIzaSyAvCO_bcpW5Zuh-Wmizb9AuH8_RxHl6BVY',
                 UNSPLASH_ACCESS_KEY: '0MxrzHN86Ygh3Q0J5o_I2gfw0nK2jZE6fn5KZz_t2VI', // Unsplash API Access Key
-                SPAWN_DISTANCE: { min: 150, max: 200 }, // meters
+                SPAWN_DISTANCE: { min: 250, max: 300 }, // meters
                 COLLECTION_RADIUS: 50, // meters to collect
                 GEIGER_UPDATE_INTERVAL: 100, // ms
                 MAX_SPAWN_ATTEMPTS: 30, // Maximum attempts to find valid street spawn
@@ -835,29 +1041,6 @@
                         "Built in 1889 for the World's Fair by Gustave Eiffel, this 330-meter tower was initially criticized but became the world's most recognizable monument.",
                     photo: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=600',
                     emoji: '🗼',
-                    spawnPoints: [
-                        {
-                            lat: 48.861,
-                            lng: 2.292,
-                            heading: 180,
-                            description: 'Trocadero approach 300m',
-                            difficulty: 'easy',
-                        },
-                        {
-                            lat: 48.856,
-                            lng: 2.297,
-                            heading: 90,
-                            description: 'Champ de Mars 350m',
-                            difficulty: 'medium',
-                        },
-                        {
-                            lat: 48.86,
-                            lng: 2.289,
-                            heading: 135,
-                            description: 'Seine riverside 400m',
-                            difficulty: 'medium',
-                        },
-                    ],
                 },
                 {
                     name: 'Louvre Museum',
@@ -867,29 +1050,6 @@
                         'Originally built as a fortress in 1190, then a royal palace, it opened as a museum in 1793. Home to 38,000 artworks including the Mona Lisa.',
                     photo: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=600',
                     emoji: '🏛️',
-                    spawnPoints: [
-                        {
-                            lat: 48.8606,
-                            lng: 2.333,
-                            heading: 90,
-                            description: 'Rue de Rivoli 400m',
-                            difficulty: 'easy',
-                        },
-                        {
-                            lat: 48.859,
-                            lng: 2.335,
-                            heading: 180,
-                            description: 'Seine riverside 300m',
-                            difficulty: 'medium',
-                        },
-                        {
-                            lat: 48.863,
-                            lng: 2.336,
-                            heading: 180,
-                            description: 'Palais Royal 300m',
-                            difficulty: 'medium',
-                        },
-                    ],
                 },
                 {
                     name: 'Notre-Dame Cathedral',
@@ -899,34 +1059,29 @@
                         'Construction began in 1163 and took 200 years. This medieval Catholic cathedral survived the French Revolution and a devastating 2019 fire.',
                     photo: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600',
                     emoji: '⛪',
-                    spawnPoints: [
-                        {
-                            lat: 48.8555,
-                            lng: 2.348,
-                            heading: 45,
-                            description: 'Ile de la Cite 300m',
-                            difficulty: 'easy',
-                        },
-                        {
-                            lat: 48.8505,
-                            lng: 2.348,
-                            heading: 0,
-                            description: 'Left Bank 300m',
-                            difficulty: 'medium',
-                        },
-                        {
-                            lat: 48.8545,
-                            lng: 2.352,
-                            heading: 90,
-                            description: 'East island 250m',
-                            difficulty: 'medium',
-                        },
-                    ],
                 },
             ];
 
             // Use the locations with paths
             const HUNT_LOCATIONS = HUNT_LOCATIONS_WITH_PATHS;
+
+            // ═══════════════════════════════════════════════════════════
+            // COUPON REWARD SYSTEM - Random loot items for special waypoints
+            // ═══════════════════════════════════════════════════════════
+            const LOOT_COUPONS = [
+                { name: 'Golden Compass', emoji: '🧭', rarity: 'legendary' },
+                { name: 'Ancient Map', emoji: '🗺️', rarity: 'epic' },
+                { name: 'Crystal Gem', emoji: '💎', rarity: 'legendary' },
+                { name: 'Time Watch', emoji: '⌚', rarity: 'epic' },
+                { name: 'Magic Key', emoji: '🔑', rarity: 'rare' },
+                { name: 'Telescope', emoji: '🔭', rarity: 'epic' },
+                { name: 'Crown Jewel', emoji: '👑', rarity: 'legendary' },
+                { name: 'Treasure Chest', emoji: '💰', rarity: 'epic' },
+                { name: 'Star Coin', emoji: '⭐', rarity: 'rare' },
+                { name: 'Phoenix Feather', emoji: '🪶', rarity: 'legendary' },
+                { name: 'Magic Scroll', emoji: '📜', rarity: 'rare' },
+                { name: 'Dragon Scale', emoji: '🐉', rarity: 'legendary' },
+            ];
 
             // ═══════════════════════════════════════════════════════════
             // ADVENTURE PATHS - Sequential waypoint system - PARIS
@@ -1133,6 +1288,9 @@
                 // API Integration
                 wikiUnsplashAPI: null,
                 locationDataCache: {},
+                // Coupon Reward System
+                couponWaypoints: [], // Stores waypoint indices that have coupons
+                collectedCoupons: [], // Track collected coupons
             };
 
             // ═══════════════════════════════════════════════════════════
@@ -1375,11 +1533,22 @@
                     STATE.currentWaypointIndex = 0;
                     STATE.visitedWaypoints = [];
 
+                    // 🎁 COUPON SYSTEM: Randomly select 1 waypoint to have a coupon reward
+                    const totalWaypoints = selectedPath.waypoints.length;
+                    STATE.couponWaypoints = [];
+                    
+                    // Randomly select one waypoint index
+                    if (totalWaypoints > 0) {
+                        const randomWaypointIndex = Math.floor(Math.random() * totalWaypoints);
+                        STATE.couponWaypoints.push(randomWaypointIndex);
+                    }
+                    
                     console.log(`🗺️ Adventure: ${selectedLocation}`);
                     console.log(`🛤️ Path: ${selectedPath.name} (${selectedPath.difficulty})`);
                     console.log(
                         `📍 ${selectedPath.waypoints.length} waypoints + final destination`
                     );
+                    console.log(`🎁 Coupon waypoint: ${STATE.couponWaypoints.map(i => i + 1).join(', ')}`);
 
                     // Set active loot to first waypoint
                     const firstWaypoint = selectedPath.waypoints[0];
@@ -1483,16 +1652,17 @@
                     function trySpawn() {
                         if (attempts >= maxAttempts) {
                             console.warn(`⚠️ Max spawn attempts reached after ${attempts} tries`);
-                            if (bestSpawn) {
+                            // Only use bestSpawn if it's reasonably close (within 500m)
+                            if (bestSpawn && bestDistance < 500) {
                                 console.log(
                                     `✅ Using best spawn found: ${Math.round(bestDistance)}m from target`
                                 );
                                 resolve(bestSpawn);
                             } else {
                                 console.error(
-                                    '❌ No valid spawn found! Using fallback at target location + 175m'
+                                    '❌ No valid spawn found! Using fallback at target location + 275m'
                                 );
-                                // Fallback: spawn at exactly 175m (middle of range) in a cardinal direction
+                                // Fallback: spawn at exactly 275m (middle of range) in a cardinal direction
                                 const fallbackDistance =
                                     (CONFIG.SPAWN_DISTANCE.min + CONFIG.SPAWN_DISTANCE.max) / 2;
                                 const angle =
@@ -1518,7 +1688,7 @@
                         STATE.streetViewService.getPanorama(
                             {
                                 location: candidateSpawn,
-                                radius: 50, // Search within 50m
+                                radius: 100, // Search within 100m
                                 source: google.maps.StreetViewSource.OUTDOOR,
                             },
                             (data, status) => {
@@ -1844,7 +2014,7 @@
             ) {
                 const lootBox = document.getElementById('target-loot');
 
-                if (distance > 500) {
+                if (distance > 50) {
                     lootBox.style.display = 'none';
                     return;
                 }
@@ -1888,17 +2058,61 @@
                 }
 
                 console.log('✅ Item collected!');
-                showCollectionModal();
+                
+                // 🎁 Check if this waypoint has a coupon reward
+                let couponReward = null;
+                if (STATE.adventureMode && STATE.activeLoot.isWaypoint) {
+                    const currentWaypointIndex = STATE.currentWaypointIndex;
+                    if (STATE.couponWaypoints.includes(currentWaypointIndex)) {
+                        // Select a random coupon that hasn't been collected yet
+                        const availableCoupons = LOOT_COUPONS.filter(
+                            coupon => !STATE.collectedCoupons.some(c => c.name === coupon.name)
+                        );
+                        
+                        if (availableCoupons.length > 0) {
+                            couponReward = availableCoupons[Math.floor(Math.random() * availableCoupons.length)];
+                            STATE.collectedCoupons.push(couponReward);
+                            console.log(`🎁 BONUS COUPON AWARDED: ${couponReward.emoji} ${couponReward.name} (${couponReward.rarity})`);
+                            updateCouponDisplay();
+                        }
+                    }
+                }
+                
+                // Show coupon reveal first if there's a coupon, then the collection modal
+                if (couponReward) {
+                    showCouponReveal(couponReward);
+                } else {
+                    showCollectionModal(couponReward);
+                }
                 stopGeiger();
             };
 
-            async function showCollectionModal() {
+            async function showCollectionModal(couponReward = null) {
                 const modal = document.getElementById('chrono-modal');
                 modal.classList.remove('hidden');
 
-                document.getElementById('modal-title').textContent = STATE.activeLoot.name;
-                document.getElementById('modal-desc').textContent =
-                    STATE.activeLoot.history || STATE.activeLoot.description;
+                // Display coupon reward if available
+                let titleText = STATE.activeLoot.name;
+                if (couponReward) {
+                    titleText += ` 🎁`;
+                }
+                
+                document.getElementById('modal-title').textContent = titleText;
+                
+                let descriptionText = STATE.activeLoot.history || STATE.activeLoot.description;
+                
+                // Add coupon bonus message at the top of description
+                if (couponReward) {
+                    const rarityColors = {
+                        'legendary': '🌟',
+                        'epic': '💜',
+                        'rare': '💙'
+                    };
+                    const rarityEmoji = rarityColors[couponReward.rarity] || '✨';
+                    descriptionText = `${rarityEmoji} BONUS REWARD UNLOCKED! ${rarityEmoji}\n\n${couponReward.emoji} ${couponReward.name} (${couponReward.rarity.toUpperCase()})\n\nThis special loot item has been added to your collection!\n\n━━━━━━━━━━━━━━━━━━━━\n\n${descriptionText}`;
+                }
+                
+                document.getElementById('modal-desc').textContent = descriptionText;
                 document.getElementById('modal-year').textContent =
                     STATE.activeLoot.year || 'Present Day';
 
@@ -2203,6 +2417,45 @@
                         transitionToNextLevel();
                     }
                 }
+            };
+
+            function updateCouponDisplay() {
+                const inventoryBar = document.getElementById('inventory-bar');
+                if (STATE.collectedCoupons.length > 0) {
+                    const couponText = STATE.collectedCoupons.map(c => c.emoji).join(' ');
+                    inventoryBar.innerHTML = `<div style="display: flex; gap: 5px; align-items: center;">
+                        <span style="color: var(--nomai-gold);">🎁 LOOT:</span>
+                        <span style="font-size: 1.2em;">${couponText}</span>
+                        <span style="color: var(--neon-cyan); font-size: 0.9em;">(${STATE.collectedCoupons.length})</span>
+                    </div>`;
+                }
+            }
+
+            function showCouponReveal(couponReward) {
+                const overlay = document.getElementById('coupon-reveal');
+                
+                // Update coupon details
+                document.getElementById('coupon-emoji').textContent = couponReward.emoji;
+                document.getElementById('coupon-name').textContent = couponReward.name;
+                
+                const rarityElement = document.getElementById('coupon-rarity');
+                rarityElement.textContent = couponReward.rarity.toUpperCase();
+                rarityElement.className = `coupon-rarity ${couponReward.rarity}`;
+                
+                // Show the overlay
+                overlay.classList.remove('hidden');
+                
+                // Store the coupon for later use
+                window.currentCouponReward = couponReward;
+            }
+
+            window.closeCouponReveal = function() {
+                const overlay = document.getElementById('coupon-reveal');
+                overlay.classList.add('hidden');
+                
+                // Now show the collection modal with coupon info
+                showCollectionModal(window.currentCouponReward);
+                window.currentCouponReward = null;
             };
 
             function transitionToNextLevel() {

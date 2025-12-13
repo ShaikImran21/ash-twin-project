@@ -1,22 +1,31 @@
 {
-    "name": "ash-twin-project",
-    "version": "1.0.0",
-    "description": "A browser-based Google Street View treasure hunt game with automated Trail Mode navigation.",
-    "scripts": {
-        "lint": "eslint .",
-        "lint:fix": "eslint . --fix",
-        "format": "prettier --write \"**/*.{js,html,css,md,json}\"",
-        "format:check": "prettier --check \"**/*.{js,html,css,md,json}\""
-    },
-    "devDependencies": {
-        "eslint": "^8.54.0",
-        "prettier": "^3.1.0"
-    },
-    "keywords": [
-        "game",
-        "streetview",
-        "treasure-hunt"
-    ],
-    "author": "",
-    "license": "MIT"
+  "name": "voyager-auth-backend",
+  "version": "1.0.0",
+  "description": "Backend server for Voyager Travel authentication with Brevo email OTP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "start:api-proxy": "node api-proxy-server.js",
+    "dev:api-proxy": "nodemon api-proxy-server.js"
+  },
+  "keywords": [
+    "authentication",
+    "otp",
+    "email",
+    "express",
+    "brevo"
+  ],
+  "author": "Voyager Travel",
+  "license": "MIT",
+  "dependencies": {
+    "appwrite": "^21.5.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
 }
