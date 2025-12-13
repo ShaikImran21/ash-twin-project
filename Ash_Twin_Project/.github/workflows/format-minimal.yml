@@ -1,0 +1,36 @@
+name: Format Check (Minimal)
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  prettier:
+    name: Run Prettier - Minimal Errors
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Check code formatting (informational only)
+        run: npm run format:check || true
+        continue-on-error: true
+      
+      - name: Summary
+        run: echo "✅ Format check complete - issues are informational only"

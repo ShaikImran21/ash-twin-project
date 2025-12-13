@@ -1,0 +1,279 @@
+Generate a single-file, production-ready index.html that implements a browser-based Street View treasure hunt game   │
+│ with a Trail Mode feature. Include ALL HTML, CSS, and JavaScript inline in this one file—no external build tools or  │
+│ frameworks. The app must run as a static file served by a local server.                                              │
+│                                                                                                                      │
+│ High-level goal:                                                                                                     │
+│                                                                                                                      │
+│  • Fullscreen Google Street View interface for navigating to real-world targets from a provided dataset.             │
+│  • “INITIATE SEQUENCE” selects a random target (from provided data) and initializes Street View near it.             │
+│  • “🎬 TRAIL MODE” plans a walking route and automatically moves through Street View along that route to the target. │
+│  • Consistent use of target coordinates under STATE.activeLoot.coords.lat and STATE.activeLoot.coords.lng (never     │
+│    STATE.activeLoot.target).                                                                                         │
+│                                                                                                                      │
+│ Important:                                                                                                           │
+│                                                                                                                      │
+│  • Place a clear TODO comment at the top showing where to insert the Google Maps API key in the script tag.          │
+│  • The file must work if opened via http://localhost:8000/index.html with a valid Maps JS API key.                   │
+│                                                                                                                      │
+│ Project context:                                                                                                     │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│  • An accompanying file verse_data_enhanced.js may exist which exports HUNT_LOCATIONS_WITH_PATHS, an array of        │
+│    objects like: [ { name: "Location Name", coords: { lat: 35.0000, lng: 139.0000 }, year: "1234 AD", history: "One  │
+│    or two sentences...", clue: "A short clue hint...", verse: "A poetic or narrative verse..." }, ... ]              │
+│  • If verse_data_enhanced.js is present, load it via a  tag. If it is missing, include a small fallback dataset      │
+│    inside index.html to avoid runtime errors.                                                                        │
+│  • There are audio assets in an assets/ folder:                                                                      │
+│     • assets/boom.wav (error or bad action)                                                                          │
+│     • assets/collect.wav (success)                                                                                   │
+│     • assets/warp.wav (a jump during trail movement)                                                                 │
+│                                                                                                                      │
+│ Strict requirements:                                                                                                 │
+│                                                                                                                      │
+│  • No external CSS or JS frameworks (no Bootstrap, jQuery, etc.).                                                    │
+│  • The file must be self-contained and readable with inline CSS and JS.                                              │
+│  • Must use vanilla JavaScript and Google Maps JavaScript API v3.                                                    │
+│  • Include google.maps.geometry library for polyline decoding. Set libraries=geometry in the script.                 │
+│                                                                                                                      │
+│ Google API setup:                                                                                                    │
+│                                                                                                                      │
+│  • Load Google Maps JavaScript API using a script tag like:                                                          │
+│  • Add a comment near the script tag: “TODO: Insert your Google Maps API key”                                        │
+│  • Use:                                                                                                              │
+│     • google.maps.StreetViewPanorama                                                                                 │
+│     • google.maps.DirectionsService                                                                                  │
+│     • google.maps.StreetViewService                                                                                  │
+│     • google.maps.Map (as a minimap)                                                                                 │
+│     • google.maps.geometry.encoding.decodePath for polyline decoding                                                 │
+│                                                                                                                      │
+│ HTML structure (IDs and classes must match exactly):                                                                 │
+│                                                                                                                      │
+│  • A fullscreen container:                                                                                           │
+│                                                                                                                      │
+│ CSS requirements:                                                                                                    │
+│                                                                                                                      │
+│  • Make #streetview fill the viewport beneath the toolbar.                                                           │
+│  • Position #toolbar at the top; horizontal layout. Sticky/fixed to the top, with a slight shadow.                   │
+│  • #btn-trail should visually indicate on/off state:                                                                 │
+│     • Default: gold background (#d4af37) with subtle hover brighter.                                                 │
+│     • Active: stronger glow or darker gold with an “ACTIVE” state look.                                              │
+│  • #minimap: small map overlay (200x200px), positioned bottom-left with a light border and shadow.                   │
+│  • #verse-bar: bottom overlay spanning width, semi-transparent dark background with white text, slight padding.      │
+│  • #spinner: centered overlay; large text or simple CSS spinner acceptable.                                          │
+│  • #toast: top-right or bottom-right small notification area; show/hide with fade.                                   │
+│  • Ensure responsive behavior on mobile widths.                                                                      │
+│                                                                                                                      │
+│ JavaScript: Global STATE object (exact shape): const STATE = { streetView: null,           //                        │
+│ google.maps.StreetViewPanorama map: null,                  // google.maps.Map (minimap) directionsService: null,     │
+│ // google.maps.DirectionsService streetViewService: null,    // google.maps.StreetViewService currentPos: { lat:     │
+│ null, lng: null }, // last known panorama position activeLoot: null,           // selected item from                 │
+│ HUNT_LOCATIONS_WITH_PATHS trailModeActive: false,     // whether trail mode is on routePolyline: null,        //     │
+│ google.maps.Polyline for route visualization waypoints: [],              // Array<{ lat: number, lng: number }>      │
+│ waypointIndex: 0,           // current waypoint index while moving advanceTimer: null,         // timer/interval ID  │
+│ for movement loop markers: {                  // minimap markers me: null,                 // current position       │
+│ marker target: null              // destination marker } };                                                          │
+│                                                                                                                      │
+│ Initialization:                                                                                                      │
+│                                                                                                                      │
+│  • On DOMContentLoaded:                                                                                              │
+│     • Bind click handlers:                                                                                           │
+│        • #btn-init -> startLevel()                                                                                   │
+│        • #btn-trail -> toggleTrailMode()                                                                             │
+│     • Initialize Maps constructs when API is ready:                                                                  │
+│        • STATE.directionsService = new google.maps.DirectionsService();                                              │
+│        • STATE.streetViewService = new google.maps.StreetViewService();                                              │
+│        • STATE.map = new google.maps.Map(document.getElementById('minimap'), { mapTypeId: 'roadmap', zoom: 15,       │
+│          center: { lat: 0, lng: 0 }, disableDefaultUI: true });                                                      │
+│     • Create STATE.streetView = new google.maps.StreetViewPanorama(document.getElementById('streetview'), {          │
+│       position: { lat: 0, lng: 0 }, pov: { heading: 0, pitch: 0 }, zoom: 1, visible: true });                        │
+│                                                                                                                      │
+│ Data loading:                                                                                                        │
+│                                                                                                                      │
+│  • Try to read global HUNT_LOCATIONS_WITH_PATHS if loaded from verse_data_enhanced.js.                               │
+│  • If not present, define a fallback array with at least 2-3 sample locations in the same schema so the app runs.    │
+│                                                                                                                      │
+│ Helper utilities to implement (exact function names and behavior):                                                   │
+│                                                                                                                      │
+│  • clamp(val, min, max)                                                                                              │
+│  • haversineDistance(lat1, lng1, lat2, lng2) // returns meters                                                       │
+│  • showToast(message, timeoutMs=2500)                                                                                │
+│  • setLoading(loading) // toggles #spinner hidden attribute                                                          │
+│  • playSound(name) // name ∈ { 'boom', 'collect', 'warp' } -> plays assets/*.wav with error handling                 │
+│  • setUIEnabled(enabled) // enables/disables #btn-trail based on readiness                                           │
+│                                                                                                                      │
+│ Core functions (exact signatures):                                                                                   │
+│                                                                                                                      │
+│  • startLevel():                                                                                                     │
+│     • Randomly choose STATE.activeLoot from HUNT_LOCATIONS_WITH_PATHS.                                               │
+│     • Update UI:                                                                                                     │
+│        • #status-name = activeLoot.name                                                                              │
+│        • #status-year = activeLoot.year                                                                              │
+│        • #status-clue = "Clue: " + activeLoot.clue                                                                   │
+│        • #verse-text = activeLoot.verse                                                                              │
+│     • Find a panorama near activeLoot.coords:                                                                        │
+│        • Use STATE.streetViewService.getPanorama({ location: activeLoot.coords, radius: 250, preference: "nearest"   │
+│          }, callback)                                                                                                │
+│        • If not found, expand radius to 500, then 1000. If still not found, showToast("No Street View near this      │
+│          location") and abort.                                                                                       │
+│     • Set STATE.streetView to that pano and set position/POV.                                                        │
+│     • Update STATE.currentPos to the pano’s lat/lng.                                                                 │
+│     • Update minimap:                                                                                                │
+│        • Center on STATE.currentPos                                                                                  │
+│        • Create/update markers:                                                                                      │
+│           • me: current position (blue-ish marker)                                                                   │
+│           • target: destination (red marker)                                                                         │
+│     • Enable #btn-trail (remove disabled).                                                                           │
+│     • Start a short interval (e.g., every 1s) to recompute distance using haversineDistance(STATE.currentPos.lat,    │
+│       STATE.currentPos.lng, STATE.activeLoot.coords.lat, STATE.activeLoot.coords.lng) and update #status-distance    │
+│       text like “Distance: 123 m”.                                                                                   │
+│  • toggleTrailMode():                                                                                                │
+│     • If STATE.trailModeActive is false:                                                                             │
+│        • Check preconditions: STATE.streetView exists, STATE.activeLoot exists.                                      │
+│        • Call calculateRoute(). If successful, drawRoute() and start advanceAlongRoute().                            │
+│        • Update UI state (button active style).                                                                      │
+│        • If any step fails, showToast with a friendly message, playSound('boom'), and ensure STATE.trailModeActive   │
+│          is false.                                                                                                   │
+│     • If STATE.trailModeActive is true:                                                                              │
+│        • Stop any pending timers (clearInterval/clearTimeout).                                                       │
+│        • Remove/dim route polyline and set STATE.routePolyline = null.                                               │
+│        • Reset waypoints/waypointIndex.                                                                              │
+│        • Update UI state (button normal style).                                                                      │
+│        • Set STATE.trailModeActive = false.                                                                          │
+│  • calculateRoute():                                                                                                 │
+│     • setLoading(true)                                                                                               │
+│     • Use STATE.directionsService.route({ origin: STATE.currentPos, destination: STATE.activeLoot.coords,            │
+│       travelMode: google.maps.TravelMode.WALKING }, callback)                                                        │
+│     • On success:                                                                                                    │
+│        • Extract overview_polyline or steps into an ordered list of LatLng points.                                   │
+│        • Decode using google.maps.geometry.encoding.decodePath if using overview_polyline.                           │
+│        • Map points into STATE.waypoints = [{ lat, lng }, ...]                                                       │
+│        • If fewer than ~2 points, treat as failure.                                                                  │
+│     • On failure:                                                                                                    │
+│        • showToast("Unable to calculate walking route"); playSound('boom')                                           │
+│     • Always setLoading(false)                                                                                       │
+│     • Return a boolean for success/failure.                                                                          │
+│  • drawRoute():                                                                                                      │
+│     • If STATE.routePolyline exists, remove it from map first.                                                       │
+│     • Create a new google.maps.Polyline({ path: STATE.waypoints.map(p => ({ lat: p.lat, lng: p.lng })), map:         │
+│       STATE.map, strokeColor: '#1e90ff', strokeOpacity: 0.9, strokeWeight: 4 })                                      │
+│     • Assign to STATE.routePolyline.                                                                                 │
+│     • Fit minimap bounds to include current position and target and most of the route.                               │
+│  • advanceAlongRoute():                                                                                              │
+│     • Set STATE.trailModeActive = true                                                                               │
+│     • Use an interval, e.g., every 1200 ms:                                                                          │
+│        • If waypointIndex >= waypoints.length: stop trail mode gracefully.                                           │
+│        • Let wp = STATE.waypoints[STATE.waypointIndex]                                                               │
+│        • Find nearest panorama near wp using STATE.streetViewService.getPanorama({ location: wp, radius: 60,         │
+│          preference: "nearest" }, cb)                                                                                │
+│           • If not found, increment waypointIndex and continue (skip).                                               │
+│           • If found:                                                                                                │
+│              • Set STATE.streetView.setPano(result.location.pano) or setPosition(result.location.latLng)             │
+│              • Compute heading from current pano latLng to next waypoint (use                                        │
+│                google.maps.geometry.spherical.computeHeading)                                                        │
+│              • Set POV with setPov({ heading, pitch: 0 })                                                            │
+│              • Update STATE.currentPos = pano location                                                               │
+│              • Update #status-distance                                                                               │
+│              • Update “me” marker on minimap                                                                         │
+│              • playSound('warp')                                                                                     │
+│              • Increment waypointIndex                                                                               │
+│        • Stop condition:                                                                                             │
+│           • If haversineDistance between STATE.currentPos and STATE.activeLoot.coords <= 25 meters:                  │
+│              • Stop timers and Trail Mode                                                                            │
+│              • showToast("Arrived!"), playSound('collect')                                                           │
+│              • Keep polyline visible but dim or remove as you see fit                                                │
+│              • Update UI state (Trail button off)                                                                    │
+│     • Ensure defensive checks in callback paths (component may be toggled off mid-request).                          │
+│  • setStreetViewToLatLng(lat, lng, options?): Promise:                                                               │
+│     • A small helper that sets streetview position and POV, returns a Promise resolved after idle or a short timeout │
+│       to let view update.                                                                                            │
+│  • findNearestPanoTo(lat, lng, radius=50): Promise:                                                                  │
+│     • Wraps StreetViewService.getPanorama in a Promise; resolves with pano data or null.                             │
+│  • updateDistanceUI():                                                                                               │
+│     • Recompute distance every second or when movement occurs.                                                       │
+│     • Update #status-distance to “Distance: X m” (rounded) or “X.X km” if >= 1000 m.                                 │
+│  • updateMarkers():                                                                                                  │
+│     • If markers don’t exist, create them with new google.maps.Marker({ position: ..., map: STATE.map, ... });       │
+│     • Update positions for “me” and “target”.                                                                        │
+│  • setTrailButtonActive(active):                                                                                     │
+│     • Adds/removes an “active” CSS class on #btn-trail for styling.                                                  │
+│                                                                                                                      │
+│ Audio handling:                                                                                                      │
+│                                                                                                                      │
+│  • Preload three Audio objects for boom, collect, warp.                                                              │
+│  • playSound(name) must catch playback errors (e.g., autoplay restrictions) and fail silently with console.info.     │
+│                                                                                                                      │
+│ Error handling and logging:                                                                                          │
+│                                                                                                                      │
+│  • Wrap Maps API calls with try/catch or defensive callbacks.                                                        │
+│  • On API errors (e.g., OVER_QUERY_LIMIT), show a Toast with short message and console.error the details.            │
+│  • If the Google Maps script fails to load, show a centered message instructing the user to insert API key.          │
+│                                                                                                                      │
+│ Keyboard shortcuts (optional but preferred):                                                                         │
+│                                                                                                                      │
+│  • Key "I" -> click “INITIATE SEQUENCE”                                                                              │
+│  • Key "T" -> toggleTrailMode()                                                                                      │
+│  • Ignore shortcuts if buttons are disabled.                                                                         │
+│                                                                                                                      │
+│ Accessibility:                                                                                                       │
+│                                                                                                                      │
+│  • Buttons must be accessible with proper aria-label and focus styles.                                               │
+│  • The toast uses role="status" aria-live="polite".                                                                  │
+│  • Ensure sufficient contrast for toolbar and verse bar.                                                             │
+│                                                                                                                      │
+│ Button enabling/disabling:                                                                                           │
+│                                                                                                                      │
+│  • #btn-trail is disabled until:                                                                                     │
+│     • A level is started (STATE.activeLoot != null)                                                                  │
+│     • Street View has initialized a valid pano (STATE.currentPos has finite numbers)                                 │
+│  • While calculateRoute or panorama jump is in progress, show #spinner.                                              │
+│                                                                                                                      │
+│ Distance formatting:                                                                                                 │
+│                                                                                                                      │
+│  • If distance < 1000: show “Distance: N m” where N is integer.                                                      │
+│  • Else: show “Distance: K.K km” to one decimal.                                                                     │
+│                                                                                                                      │
+│ Minimap details:                                                                                                     │
+│                                                                                                                      │
+│  • Keep minimap small (200x200) bottom-left.                                                                         │
+│  • Use a subtle custom marker color for the “me” marker and a distinct red for “target”.                             │
+│  • Update the map center to follow current position occasionally but avoid jitter (e.g., every 3-5 steps).           │
+│                                                                                                                      │
+│ Defensive details:                                                                                                   │
+│                                                                                                                      │
+│  • Always use STATE.activeLoot.coords.lat and STATE.activeLoot.coords.lng (never .target).                           │
+│  • If HUNT_LOCATIONS_WITH_PATHS is absent, use fallback dataset bundled in the file.                                 │
+│  • If no route can be calculated or Street View pano cannot be found near waypoints, auto-stop Trail Mode and inform │
+│    the user with a toast.                                                                                            │
+│                                                                                                                      │
+│ Acceptance criteria (must all pass):                                                                                 │
+│                                                                                                                      │
+│  1 INITIATE SEQUENCE selects a random entry from HUNT_LOCATIONS_WITH_PATHS and updates UI: name, year, clue, verse.  │
+│  2 Street View loads near the target within reasonable radius (<= 1000m).                                            │
+│  3 Distance to target displays and updates as the user moves (manually or via Trail Mode).                           │
+│  4 Trail Mode calculates a WALKING route, draws a polyline on the minimap, and automatically advances through Street │
+│    View panoramas toward the target.                                                                                 │
+│  5 Arrival is detected within 25 meters, Trail Mode stops, and collect.wav plays.                                    │
+│  6 The app never references STATE.activeLoot.target, only STATE.activeLoot.coords.                                   │
+│  7 The app runs when served locally and the API key is inserted.                                                     │
+│                                                                                                                      │
+│ Testing notes:                                                                                                       │
+│                                                                                                                      │
+│  • Provide console.log messages for lifecycle events:                                                                │
+│     • “Level started at …”                                                                                           │
+│     • “Route calculated with N points”                                                                               │
+│     • “Advancing to waypoint i/N”                                                                                    │
+│     • “Panorama not found near waypoint—skipping”                                                                    │
+│     • “Arrived at destination”                                                                                       │
+│  • Provide clear error logs for:                                                                                     │
+│     • DirectionsService errors                                                                                       │
+│     • StreetViewService errors                                                                                       │
+│     • Audio playback issues                                                                                          │
+│  • Use try/finally to hide the spinner after async work.                                                             │
+│                                                                                                                      │
+│ Final note:                                                                                                          │
+│                                                                                                                      │
+│  • Include a short top-of-file comment block:                                                                        │
+│     • Instructions to insert Google Maps API key                                                                     │
+│     • Reminder to serve via a local web server (e.g., python -m http.server 8000)                                    │
+│

@@ -1,0 +1,8 @@
+node_modules/
+.dist/
+*.backup
+*.min.js
+*.min.css
+*.log
+.vscode/
+.idea/
