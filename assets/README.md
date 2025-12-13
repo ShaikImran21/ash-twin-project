@@ -11,11 +11,12 @@ This folder contains sound effects for the game.
 ## How to Add Audio Files
 
 You can:
+
 1. **Create your own** using audio editing software
 2. **Download free sounds** from sites like:
-   - [Freesound.org](https://freesound.org/)
-   - [Zapsplat.com](https://www.zapsplat.com/)
-   - [Mixkit.co](https://mixkit.co/free-sound-effects/)
+    - [Freesound.org](https://freesound.org/)
+    - [Zapsplat.com](https://www.zapsplat.com/)
+    - [Mixkit.co](https://mixkit.co/free-sound-effects/)
 3. **Use simple beeps** generated online
 
 ## Temporary Solution

@@ -19,9 +19,9 @@ A browser-based Google Street View treasure hunt game with automated Trail Mode 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
 3. Enable the following APIs:
-   - Maps JavaScript API
-   - Street View Static API
-   - Directions API
+    - Maps JavaScript API
+    - Street View Static API
+    - Directions API
 4. Create credentials (API Key)
 5. Copy your API key
 
@@ -34,6 +34,7 @@ A browser-based Google Street View treasure hunt game with automated Trail Mode 
 ### 3. Add Audio Assets
 
 Create an `assets/` folder in the project directory and add these audio files:
+
 - `boom.wav` - Error/failure sound
 - `collect.wav` - Success/arrival sound
 - `warp.wav` - Movement/jump sound
@@ -43,16 +44,19 @@ Create an `assets/` folder in the project directory and add these audio files:
 The app must be served via a web server (not opened directly as a file). Use one of these methods:
 
 **Python (recommended):**
+
 ```bash
 python -m http.server 8000
 ```
 
 **Node.js (http-server):**
+
 ```bash
 npx http-server -p 8000
 ```
 
 **PHP:**
+
 ```bash
 php -S localhost:8000
 ```

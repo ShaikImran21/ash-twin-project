@@ -1,16 +1,19 @@
 # Tokyo Adventure Paths System - Summary
 
 ## Overview
+
 Complete redesign of the game with **predetermined adventure routes** instead of random spawning.
 
 ## Structure
 
 ### Each Main Landmark has:
+
 - **3 Different Adventure Paths** (easy, medium, hard)
 - **Each Path has 6 Waypoints** (sub-locations)
 - **Final Destination** (main landmark)
 
 ### Total Content:
+
 - 9 Main Landmarks
 - 27 Adventure Paths (3 per landmark)
 - 162 Waypoints (6 per path)
@@ -21,11 +24,13 @@ Complete redesign of the game with **predetermined adventure routes** instead of
 ## Path Design Philosophy
 
 ### Path Types:
+
 1. **Easy Route** - Main tourist path, well-marked, popular spots
 2. **Medium Route** - Mix of tourist and local spots, some exploration
 3. **Hard Route** - Secret backstreets, hidden gems, local neighborhoods
 
 ### Each Waypoint Includes:
+
 - ✅ Order number (1-6 sequential)
 - ✅ Real coordinates & heading
 - ✅ Name & emoji
@@ -39,19 +44,22 @@ Complete redesign of the game with **predetermined adventure routes** instead of
 ## Example: Senso-ji Temple
 
 ### Path 1: "Eastern River Approach" (Medium - 850m)
-1. 🌊 Sumida River Walk → 2. ⛩️ Komagata Bridge → 3. 🏮 Hoppy Street (secret) → 
-4. 🌸 Denpoin Garden (secret) → 5. 🏮 Nakamise Street → 6. 🏮 Kaminarimon Gate → 
-**FINAL:** ⛩️ Senso-ji Main Hall
+
+1. 🌊 Sumida River Walk → 2. ⛩️ Komagata Bridge → 3. 🏮 Hoppy Street (secret) →
+2. 🌸 Denpoin Garden (secret) → 5. 🏮 Nakamise Street → 6. 🏮 Kaminarimon Gate →
+   **FINAL:** ⛩️ Senso-ji Main Hall
 
 ### Path 2: "Traditional Shopping Route" (Easy - 650m)
-1. 🍜 Ramen Shop → 2. ⛩️ Asakusa Shrine → 3. 🏯 Nitenmon Gate → 
-4. 🔥 Incense Burner → 5. ⛩️ Hozomon Gate → 6. 🗼 Five-Story Pagoda → 
-**FINAL:** ⛩️ Senso-ji Main Hall
+
+1. 🍜 Ramen Shop → 2. ⛩️ Asakusa Shrine → 3. 🏯 Nitenmon Gate →
+2. 🔥 Incense Burner → 5. ⛩️ Hozomon Gate → 6. 🗼 Five-Story Pagoda →
+   **FINAL:** ⛩️ Senso-ji Main Hall
 
 ### Path 3: "Hidden Backstreets" (Hard - 920m)
-1. 🏘️ Residential Area (secret) → 2. ⛩️ Imado Shrine (lucky cat birthplace - secret) → 
-3. 🔪 Kappabashi Street (secret) → 4. 🏯 West Entrance → 5. 🌿 Garden Path (secret) → 
-6. 📜 Fortune Area → **FINAL:** ⛩️ Senso-ji Main Hall
+
+1. 🏘️ Residential Area (secret) → 2. ⛩️ Imado Shrine (lucky cat birthplace - secret) →
+2. 🔪 Kappabashi Street (secret) → 4. 🏯 West Entrance → 5. 🌿 Garden Path (secret) →
+3. 📜 Fortune Area → **FINAL:** ⛩️ Senso-ji Main Hall
 
 ---
 
@@ -83,10 +91,12 @@ Complete level! Get star rating based on:
 ## Implementation Status
 
 ### ✅ Completed:
+
 - Senso-ji Temple (3 paths, 18 waypoints)
 - Tokyo Tower (3 paths, 18 waypoints)
 
 ### 🔄 To Create:
+
 - Meiji Shrine (3 paths, 18 waypoints)
 - Imperial Palace (3 paths, 18 waypoints)
 - Shibuya Crossing (3 paths, 18 waypoints)
@@ -102,6 +112,7 @@ Complete level! Get star rating based on:
 ## Design Decisions Needed
 
 ### Questions:
+
 1. **Path Selection:** Random or player choice?
 2. **Waypoint Detection:** How close to trigger? (50m? 100m?)
 3. **Navigation Hints:** Show distance? Direction arrow? Minimap?
@@ -111,6 +122,7 @@ Complete level! Get star rating based on:
 7. **Trail Mode:** Show full path or just next waypoint?
 
 ### Should I:
+
 - **Option A:** Continue creating all 162 waypoints (will take many iterations)
 - **Option B:** Create a prototype with 2-3 complete locations first
 - **Option C:** Create the game system first, add waypoints later
@@ -123,9 +135,9 @@ Complete level! Get star rating based on:
 I suggest **Option B: Prototype Approach**
 
 1. Finish 3 complete locations (27 waypoints):
-   - Senso-ji ✅
-   - Tokyo Tower ✅  
-   - Shibuya Crossing (to do)
+    - Senso-ji ✅
+    - Tokyo Tower ✅
+    - Shibuya Crossing (to do)
 
 2. Implement the game system with these 3
 

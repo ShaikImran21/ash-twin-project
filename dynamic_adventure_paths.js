@@ -16,7 +16,7 @@ class DynamicAdventureGenerator {
     init(map) {
         this.map = map;
         this.placesService = new google.maps.places.PlacesService(map);
-        console.log("✅ Dynamic Adventure Generator initialized");
+        console.log('✅ Dynamic Adventure Generator initialized');
     }
 
     /**
@@ -32,14 +32,19 @@ class DynamicAdventureGenerator {
         try {
             // Step 1: Find main destination (major landmark)
             const mainDestination = await this.findMainDestination(cityCenter, radius);
-            
+
             // Step 2: Find waypoints based on difficulty
             const waypointCount = this.getWaypointCount(difficulty);
-            const waypoints = await this.findWaypoints(cityCenter, mainDestination, waypointCount, radius);
-            
+            const waypoints = await this.findWaypoints(
+                cityCenter,
+                mainDestination,
+                waypointCount,
+                radius
+            );
+
             // Step 3: Order waypoints optimally (nearest neighbor algorithm)
             const orderedWaypoints = this.orderWaypoints(cityCenter, waypoints, mainDestination);
-            
+
             // Step 4: Create path object
             const path = {
                 pathId: `dynamic_${Date.now()}_${difficulty}`,
@@ -47,14 +52,13 @@ class DynamicAdventureGenerator {
                 difficulty: difficulty,
                 estimatedTime: this.estimateTime(orderedWaypoints.length),
                 waypoints: orderedWaypoints,
-                mainDestination: mainDestination
+                mainDestination: mainDestination,
             };
 
             console.log(`✅ Generated path with ${orderedWaypoints.length} waypoints`);
             return path;
-
         } catch (error) {
-            console.error("❌ Error generating adventure path:", error);
+            console.error('❌ Error generating adventure path:', error);
             throw error;
         }
     }
@@ -68,38 +72,55 @@ class DynamicAdventureGenerator {
                 location: new google.maps.LatLng(center.lat, center.lng),
                 radius: radius,
                 type: ['tourist_attraction', 'museum', 'park'],
-                rankBy: google.maps.places.RankBy.PROMINENCE
+                rankBy: google.maps.places.RankBy.PROMINENCE,
             };
 
             this.placesService.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
                     // Get details for the top result
-                    this.placesService.getDetails({
-                        placeId: results[0].place_id,
-                        fields: ['name', 'geometry', 'photos', 'formatted_address', 'rating', 'types', 'editorial_summary']
-                    }, (place, detailStatus) => {
-                        if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
-                            const mainDest = {
-                                name: place.name,
-                                coords: {
-                                    lat: place.geometry.location.lat(),
-                                    lng: place.geometry.location.lng()
-                                },
-                                emoji: this.getEmojiForType(place.types),
-                                description: place.editorial_summary?.overview || `Visit the famous ${place.name}`,
-                                address: place.formatted_address,
-                                rating: place.rating,
-                                photos: place.photos ? place.photos.slice(0, 3).map(p => p.getUrl({maxWidth: 800})) : [],
-                                foundingYear: null, // Can be enhanced with Wikipedia API
-                                history: `${place.name} is a prominent landmark in the area.`
-                            };
-                            resolve(mainDest);
-                        } else {
-                            reject("Could not get main destination details");
+                    this.placesService.getDetails(
+                        {
+                            placeId: results[0].place_id,
+                            fields: [
+                                'name',
+                                'geometry',
+                                'photos',
+                                'formatted_address',
+                                'rating',
+                                'types',
+                                'editorial_summary',
+                            ],
+                        },
+                        (place, detailStatus) => {
+                            if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
+                                const mainDest = {
+                                    name: place.name,
+                                    coords: {
+                                        lat: place.geometry.location.lat(),
+                                        lng: place.geometry.location.lng(),
+                                    },
+                                    emoji: this.getEmojiForType(place.types),
+                                    description:
+                                        place.editorial_summary?.overview ||
+                                        `Visit the famous ${place.name}`,
+                                    address: place.formatted_address,
+                                    rating: place.rating,
+                                    photos: place.photos
+                                        ? place.photos
+                                              .slice(0, 3)
+                                              .map(p => p.getUrl({ maxWidth: 800 }))
+                                        : [],
+                                    foundingYear: null, // Can be enhanced with Wikipedia API
+                                    history: `${place.name} is a prominent landmark in the area.`,
+                                };
+                                resolve(mainDest);
+                            } else {
+                                reject('Could not get main destination details');
+                            }
                         }
-                    });
+                    );
                 } else {
-                    reject("No tourist attractions found nearby");
+                    reject('No tourist attractions found nearby');
                 }
             });
         });
@@ -116,7 +137,7 @@ class DynamicAdventureGenerator {
             'point_of_interest',
             'park',
             'shopping_mall',
-            'museum'
+            'museum',
         ];
 
         const allWaypoints = [];
@@ -141,12 +162,12 @@ class DynamicAdventureGenerator {
             name: wp.name,
             coords: {
                 lat: wp.coords.lat,
-                lng: wp.coords.lng
+                lng: wp.coords.lng,
             },
             emoji: wp.emoji,
             description: wp.description,
             challenge: this.generateChallenge(wp.types),
-            heading: null // Will be calculated during route
+            heading: null, // Will be calculated during route
         }));
     }
 
@@ -154,11 +175,11 @@ class DynamicAdventureGenerator {
      * Search for waypoints by type
      */
     searchWaypointsByType(center, type, radius) {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             const request = {
                 location: new google.maps.LatLng(center.lat, center.lng),
                 radius: radius,
-                type: [type]
+                type: [type],
             };
 
             this.placesService.nearbySearch(request, (results, status) => {
@@ -167,12 +188,12 @@ class DynamicAdventureGenerator {
                         name: place.name,
                         coords: {
                             lat: place.geometry.location.lat(),
-                            lng: place.geometry.location.lng()
+                            lng: place.geometry.location.lng(),
                         },
                         emoji: this.getEmojiForType(place.types),
                         description: `Discover ${place.name}`,
                         rating: place.rating || 3.5,
-                        types: place.types
+                        types: place.types,
                     }));
                     resolve(waypoints);
                 } else {
@@ -191,13 +212,13 @@ class DynamicAdventureGenerator {
 
         for (const wp of waypoints) {
             const key = `${wp.coords.lat.toFixed(5)},${wp.coords.lng.toFixed(5)}`;
-            
+
             // Skip if duplicate or too close to main destination
             if (seen.has(key)) continue;
-            
+
             const distToMain = this.calculateDistance(wp.coords, mainDest.coords);
             if (distToMain < 50) continue; // Skip if within 50m of main dest
-            
+
             seen.add(key);
             filtered.push(wp);
         }
@@ -211,17 +232,17 @@ class DynamicAdventureGenerator {
     selectBestWaypoints(waypoints, count) {
         // Sort by rating
         waypoints.sort((a, b) => (b.rating || 3) - (a.rating || 3));
-        
+
         // Take top rated, ensuring diversity
         const selected = [];
         const typesSeen = new Set();
 
         for (const wp of waypoints) {
             if (selected.length >= count) break;
-            
+
             // Prefer diverse types
             const primaryType = wp.types?.[0] || 'point_of_interest';
-            
+
             if (!typesSeen.has(primaryType) || selected.length >= count - 2) {
                 selected.push(wp);
                 typesSeen.add(primaryType);
@@ -266,7 +287,7 @@ class DynamicAdventureGenerator {
         // Re-number waypoints
         return ordered.map((wp, index) => ({
             ...wp,
-            order: index + 1
+            order: index + 1,
         }));
     }
 
@@ -275,15 +296,15 @@ class DynamicAdventureGenerator {
      */
     calculateDistance(coord1, coord2) {
         const R = 6371e3; // Earth radius in meters
-        const φ1 = coord1.lat * Math.PI / 180;
-        const φ2 = coord2.lat * Math.PI / 180;
-        const Δφ = (coord2.lat - coord1.lat) * Math.PI / 180;
-        const Δλ = (coord2.lng - coord1.lng) * Math.PI / 180;
+        const φ1 = (coord1.lat * Math.PI) / 180;
+        const φ2 = (coord2.lat * Math.PI) / 180;
+        const Δφ = ((coord2.lat - coord1.lat) * Math.PI) / 180;
+        const Δλ = ((coord2.lng - coord1.lng) * Math.PI) / 180;
 
-        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                  Math.cos(φ1) * Math.cos(φ2) *
-                  Math.sin(Δλ/2) * Math.sin(Δλ/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const a =
+            Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return R * c;
     }
@@ -293,19 +314,19 @@ class DynamicAdventureGenerator {
      */
     getEmojiForType(types) {
         const emojiMap = {
-            'restaurant': '🍜',
-            'cafe': '☕',
-            'store': '🏪',
-            'shopping_mall': '🛍️',
-            'park': '🌳',
-            'museum': '🏛️',
-            'temple': '⛩️',
-            'shrine': '⛩️',
-            'tourist_attraction': '🎯',
-            'church': '⛪',
-            'art_gallery': '🎨',
-            'library': '📚',
-            'point_of_interest': '📍'
+            restaurant: '🍜',
+            cafe: '☕',
+            store: '🏪',
+            shopping_mall: '🛍️',
+            park: '🌳',
+            museum: '🏛️',
+            temple: '⛩️',
+            shrine: '⛩️',
+            tourist_attraction: '🎯',
+            church: '⛪',
+            art_gallery: '🎨',
+            library: '📚',
+            point_of_interest: '📍',
         };
 
         for (const type of types) {
@@ -319,13 +340,13 @@ class DynamicAdventureGenerator {
      */
     generateChallenge(types) {
         const challenges = {
-            'restaurant': 'Take a photo of the menu board',
-            'cafe': 'Find the coffee roasting area',
-            'store': 'Spot the most unique item',
-            'park': 'Find a tree older than 50 years',
-            'museum': 'Locate the main exhibit',
-            'temple': 'Find the offering box',
-            'shrine': 'Ring the bell if available'
+            restaurant: 'Take a photo of the menu board',
+            cafe: 'Find the coffee roasting area',
+            store: 'Spot the most unique item',
+            park: 'Find a tree older than 50 years',
+            museum: 'Locate the main exhibit',
+            temple: 'Find the offering box',
+            shrine: 'Ring the bell if available',
         };
 
         for (const type of types) {
@@ -339,9 +360,9 @@ class DynamicAdventureGenerator {
      */
     getWaypointCount(difficulty) {
         const counts = {
-            'easy': 4,
-            'medium': 6,
-            'hard': 8
+            easy: 4,
+            medium: 6,
+            hard: 8,
         };
         return counts[difficulty] || 6;
     }
@@ -362,13 +383,13 @@ class DynamicAdventureGenerator {
         const paths = await Promise.all([
             this.generateAdventurePath(cityCenter, radius * 0.7, 'easy'),
             this.generateAdventurePath(cityCenter, radius, 'medium'),
-            this.generateAdventurePath(cityCenter, radius * 1.3, 'hard')
+            this.generateAdventurePath(cityCenter, radius * 1.3, 'hard'),
         ]);
 
         return {
             location: cityCenter.name,
             mainDestination: paths[0].mainDestination, // Use same main dest for all
-            paths: paths
+            paths: paths,
         };
     }
 }

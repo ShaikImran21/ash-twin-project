@@ -18,7 +18,7 @@ class WikiUnsplashAPI {
      */
     async fetchWikipediaData(locationName, language = 'en') {
         const cacheKey = `${locationName}_${language}`;
-        
+
         // Check cache first
         if (this.wikiCache.has(cacheKey)) {
             console.log(`📦 Using cached Wikipedia data for ${locationName}`);
@@ -28,16 +28,16 @@ class WikiUnsplashAPI {
         try {
             // Wikipedia API endpoint
             const url = `https://${language}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(locationName)}`;
-            
+
             console.log(`📚 Fetching Wikipedia data for: ${locationName}`);
             const response = await fetch(url);
-            
+
             if (!response.ok) {
                 throw new Error(`Wikipedia API returned ${response.status}`);
             }
-            
+
             const data = await response.json();
-            
+
             const wikiData = {
                 title: data.title || locationName,
                 extract: data.extract || 'No description available.',
@@ -45,15 +45,14 @@ class WikiUnsplashAPI {
                 url: data.content_urls?.desktop?.page || '',
                 thumbnail: data.thumbnail?.source || null,
                 coordinates: data.coordinates || null,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             };
-            
+
             // Cache the result
             this.wikiCache.set(cacheKey, wikiData);
             console.log(`✅ Wikipedia data fetched for ${locationName}`);
-            
+
             return wikiData;
-            
         } catch (error) {
             console.error(`❌ Wikipedia fetch failed for ${locationName}:`, error.message);
             return {
@@ -63,7 +62,7 @@ class WikiUnsplashAPI {
                 url: '',
                 thumbnail: null,
                 coordinates: null,
-                error: error.message
+                error: error.message,
             };
         }
     }
@@ -76,36 +75,72 @@ class WikiUnsplashAPI {
      */
     async fetchUnsplashPhotos(query, count = 3) {
         const cacheKey = `${query}_${count}`;
-        
+
         // Check cache first
         if (this.unsplashCache.has(cacheKey)) {
             console.log(`📦 Using cached Unsplash photos for ${query}`);
             return this.unsplashCache.get(cacheKey);
         }
 
-        // Check if API key is available
-        if (!this.unsplashKey || this.unsplashKey === 'YOUR_UNSPLASH_ACCESS_KEY') {
-            console.warn('⚠️ Unsplash API key not configured');
-            return [];
+        // Check if API key is available - if not, use Unsplash Source as fallback
+        if (
+            !this.unsplashKey ||
+            this.unsplashKey === 'YOUR_UNSPLASH_ACCESS_KEY' ||
+            this.unsplashKey.includes('GOOGLE_MAPS')
+        ) {
+            console.warn('⚠️ Unsplash API key not configured - using Unsplash Source fallback');
+
+            // Use Unsplash Source (no API key required)
+            const photos = [];
+            for (let i = 0; i < count; i++) {
+                photos.push({
+                    url: `https://source.unsplash.com/800x600/?${encodeURIComponent(query)}&sig=${i}`,
+                    thumbnail: `https://source.unsplash.com/400x300/?${encodeURIComponent(query)}&sig=${i}`,
+                    full: `https://source.unsplash.com/1600x1200/?${encodeURIComponent(query)}&sig=${i}`,
+                    description: `${query} - Photo ${i + 1}`,
+                    photographer: 'Unsplash Contributors',
+                    photographer_url: 'https://unsplash.com',
+                    source: 'unsplash-source',
+                });
+            }
+
+            console.log(`✅ Generated ${photos.length} Unsplash Source URLs for ${query}`);
+            this.unsplashCache.set(cacheKey, photos);
+            return photos;
         }
 
         try {
             const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${count}&client_id=${this.unsplashKey}`;
-            
+
             console.log(`🖼️ Fetching Unsplash photos for: ${query}`);
             const response = await fetch(url);
-            
+
             if (!response.ok) {
-                throw new Error(`Unsplash API returned ${response.status}`);
+                console.warn(`⚠️ Unsplash API failed (${response.status}) - using fallback`);
+                // Use Unsplash Source as fallback
+                const photos = [];
+                for (let i = 0; i < count; i++) {
+                    photos.push({
+                        url: `https://source.unsplash.com/800x600/?${encodeURIComponent(query)}&sig=${i}`,
+                        thumbnail: `https://source.unsplash.com/400x300/?${encodeURIComponent(query)}&sig=${i}`,
+                        full: `https://source.unsplash.com/1600x1200/?${encodeURIComponent(query)}&sig=${i}`,
+                        description: `${query} - Photo ${i + 1}`,
+                        photographer: 'Unsplash Contributors',
+                        photographer_url: 'https://unsplash.com',
+                        source: 'unsplash-source-fallback',
+                    });
+                }
+                this.unsplashCache.set(cacheKey, photos);
+                return photos;
             }
-            
+
             const data = await response.json();
-            
+
             if (!data.results || data.results.length === 0) {
                 console.warn(`⚠️ No Unsplash photos found for ${query}`);
                 return [];
             }
-            
+
             const photos = data.results.map(photo => ({
                 url: photo.urls.regular,
                 thumbnail: photo.urls.thumb,
@@ -116,15 +151,14 @@ class WikiUnsplashAPI {
                 download_location: photo.links.download_location,
                 color: photo.color,
                 width: photo.width,
-                height: photo.height
+                height: photo.height,
             }));
-            
+
             // Cache the result
             this.unsplashCache.set(cacheKey, photos);
             console.log(`✅ Fetched ${photos.length} Unsplash photos for ${query}`);
-            
+
             return photos;
-            
         } catch (error) {
             console.error(`❌ Unsplash fetch failed for ${query}:`, error.message);
             return [];
@@ -142,14 +176,14 @@ class WikiUnsplashAPI {
             language = 'en',
             photoCount = 3,
             includeWiki = true,
-            includePhotos = true
+            includePhotos = true,
         } = options;
 
         console.log(`🌍 Fetching complete data for: ${locationName}`);
-        
+
         const results = {
             location: locationName,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         };
 
         try {
@@ -165,7 +199,6 @@ class WikiUnsplashAPI {
 
             console.log(`✅ Complete data fetched for ${locationName}`);
             return results;
-            
         } catch (error) {
             console.error(`❌ Failed to fetch complete data for ${locationName}:`, error);
             results.error = error.message;
@@ -180,9 +213,9 @@ class WikiUnsplashAPI {
      */
     async preloadLocations(locations) {
         console.log(`🔄 Preloading data for ${locations.length} locations...`);
-        
+
         const results = {};
-        const promises = locations.map(async (location) => {
+        const promises = locations.map(async location => {
             try {
                 results[location] = await this.getLocationData(location);
             } catch (error) {
@@ -193,7 +226,7 @@ class WikiUnsplashAPI {
 
         await Promise.all(promises);
         console.log(`✅ Preloaded ${Object.keys(results).length} locations`);
-        
+
         return results;
     }
 
@@ -213,12 +246,12 @@ class WikiUnsplashAPI {
         return {
             wikipedia: {
                 entries: this.wikiCache.size,
-                keys: Array.from(this.wikiCache.keys())
+                keys: Array.from(this.wikiCache.keys()),
             },
             unsplash: {
                 entries: this.unsplashCache.size,
-                keys: Array.from(this.unsplashCache.keys())
-            }
+                keys: Array.from(this.unsplashCache.keys()),
+            },
         };
     }
 }

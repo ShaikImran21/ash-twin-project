@@ -7,6 +7,7 @@ Instead of hardcoded locations, the game can now use **Google Places API** to dy
 ## ✅ What's Been Added
 
 ### New Files:
+
 1. **`dynamic_adventure_paths.js`** - Core generator using Google Places API
 2. **`dynamic_integration.js`** - Manager that combines static + dynamic paths
 3. **Modified `index.html`** - Integrated dynamic system (optional)
@@ -24,17 +25,17 @@ Instead of hardcoded locations, the game can now use **Google Places API** to dy
 ### APIs Used:
 
 - ✅ **Google Places API** (Nearby Search)
-  - Tourist attractions, restaurants, museums, parks
-  - Photos, ratings, descriptions
-  - You already have the API key!
+    - Tourist attractions, restaurants, museums, parks
+    - Photos, ratings, descriptions
+    - You already have the API key!
 
 - ✅ **Google Directions API** (Already in use)
-  - Calculate walking routes
-  - Used by Trail Mode
+    - Calculate walking routes
+    - Used by Trail Mode
 
 - ✅ **Google Street View API** (Already in use)
-  - Navigate panoramas
-  - Core game mechanic
+    - Navigate panoramas
+    - Core game mechanic
 
 ## 🚀 How to Enable Dynamic Paths
 
@@ -65,24 +66,24 @@ Replace the static path selection with dynamic:
 ```javascript
 async function startLevel(levelIndex) {
     // ... existing code ...
-    
+
     // OPTION A: Use only dynamic paths
     if (!pathManager) {
         pathManager = new AdventurePathManager();
         await pathManager.init(STATE.map, 'YOUR_API_KEY');
     }
     const adventure = await pathManager.getDynamicPath();
-    
+
     // OPTION B: Mix static and dynamic (50/50)
     const adventure = await pathManager.getRandomAdventurePath('mixed');
-    
+
     // OPTION C: Use static paths (current behavior)
     const adventure = await pathManager.getRandomAdventurePath('static');
-    
+
     // Apply the adventure
     STATE.currentAdventurePath = adventure.path;
     STATE.currentWaypointIndex = 0;
-    
+
     // ... rest of code ...
 }
 ```
@@ -92,9 +93,7 @@ async function startLevel(levelIndex) {
 Add a button to toggle between static/dynamic:
 
 ```html
-<button onclick="togglePathMode()">
-    🎲 Path Mode: <span id="path-mode">Static</span>
-</button>
+<button onclick="togglePathMode()">🎲 Path Mode: <span id="path-mode">Static</span></button>
 ```
 
 ```javascript
@@ -102,8 +101,7 @@ let USE_DYNAMIC_PATHS = false;
 
 function togglePathMode() {
     USE_DYNAMIC_PATHS = !USE_DYNAMIC_PATHS;
-    document.getElementById('path-mode').textContent = 
-        USE_DYNAMIC_PATHS ? 'Dynamic' : 'Static';
+    document.getElementById('path-mode').textContent = USE_DYNAMIC_PATHS ? 'Dynamic' : 'Static';
     console.log(`Switched to ${USE_DYNAMIC_PATHS ? 'Dynamic' : 'Static'} paths`);
 }
 ```
@@ -127,7 +125,7 @@ The dynamic system includes these cities by default:
 
 ```javascript
 const cities = [
-    { name: 'Berlin', lat: 52.5200, lng: 13.4050, radius: 4000 },
+    { name: 'Berlin', lat: 52.52, lng: 13.405, radius: 4000 },
     { name: 'Dubai', lat: 25.2048, lng: 55.2708, radius: 5000 },
     // Add your city here!
 ];
@@ -149,14 +147,14 @@ Edit `dynamic_adventure_paths.js` line 98:
 
 ```javascript
 const types = [
-    'restaurant',      // 🍜 Restaurants
-    'cafe',            // ☕ Cafes
-    'store',           // 🏪 Stores
-    'shopping_mall',   // 🛍️ Shopping
-    'park',            // 🌳 Parks
-    'museum',          // 🏛️ Museums
-    'art_gallery',     // 🎨 Galleries
-    'library',         // 📚 Libraries
+    'restaurant', // 🍜 Restaurants
+    'cafe', // ☕ Cafes
+    'store', // 🏪 Stores
+    'shopping_mall', // 🛍️ Shopping
+    'park', // 🌳 Parks
+    'museum', // 🏛️ Museums
+    'art_gallery', // 🎨 Galleries
+    'library', // 📚 Libraries
     // Add more types!
 ];
 ```
@@ -201,6 +199,7 @@ const filtered = waypoints.filter(wp => wp.rating >= 4.0);
 - **Free Tier**: $200 credit/month (~6,000 paths/month free)
 
 ### Per Path Generation:
+
 - 1x Nearby Search (main destination)
 - 7x Nearby Search (waypoint types)
 - 1x Place Details (main destination)
@@ -228,7 +227,7 @@ const path = await generator.generateAdventurePath(tokyo, 5000, 'medium');
 console.log('Main Destination:', path.mainDestination.name);
 console.log('Waypoints:', path.waypoints.length);
 path.waypoints.forEach((wp, i) => {
-    console.log(`${i+1}. ${wp.emoji} ${wp.name}`);
+    console.log(`${i + 1}. ${wp.emoji} ${wp.name}`);
 });
 ```
 
@@ -237,19 +236,18 @@ path.waypoints.forEach((wp, i) => {
 **Important**: The API key is currently in the HTML. For production:
 
 1. **Restrict the Key** in Google Cloud Console:
-   - HTTP referrers (websites)
-   - Limit to your domain only
-   
+    - HTTP referrers (websites)
+    - Limit to your domain only
 2. **Backend Proxy** (recommended for production):
-   - Create a backend endpoint
-   - Backend calls Google Places API
-   - Frontend calls your backend
-   - Keep API key server-side
+    - Create a backend endpoint
+    - Backend calls Google Places API
+    - Frontend calls your backend
+    - Keep API key server-side
 
 3. **Environment Variables**:
-   ```javascript
-   const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-   ```
+    ```javascript
+    const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+    ```
 
 ## 🎮 Recommended Setup
 
@@ -259,7 +257,7 @@ path.waypoints.forEach((wp, i) => {
 // Use mixed mode: 70% static, 30% dynamic
 async function getAdventure() {
     const useDynamic = Math.random() < 0.3; // 30% chance
-    
+
     if (useDynamic) {
         return await pathManager.getDynamicPath();
     } else {
@@ -269,6 +267,7 @@ async function getAdventure() {
 ```
 
 **Why?**
+
 - ✅ Keeps your curated Tokyo experiences
 - ✅ Adds variety with dynamic paths
 - ✅ Reduces API costs
@@ -292,8 +291,8 @@ try {
 
 1. ✅ Files are already created and integrated
 2. ⚠️ **Enable API** in Google Cloud Console:
-   - Places API
-   - Already have: Maps JavaScript API, Directions API
+    - Places API
+    - Already have: Maps JavaScript API, Directions API
 3. 🧪 Test in console first
 4. 🎮 Modify `startLevel()` to use dynamic paths
 5. 🚀 Deploy and enjoy infinite adventures!
@@ -301,6 +300,7 @@ try {
 ---
 
 **Questions or Issues?**
+
 - Check browser console for errors
 - Verify API key has Places API enabled
 - Test with small radius first (1000m)

@@ -3,6 +3,7 @@
 ## ✅ Changes Made
 
 ### Problem:
+
 - Photos need to be of the **actual places** mentioned
 - Should show **historical/past images** where relevant
 - No generic or non-relevant images
@@ -12,17 +13,20 @@
 ## 1. Enhanced Google Places Search
 
 ### Before:
+
 - Used nearby search (100m radius)
 - Took first result without validation
 - No relevance checking
 
 ### After:
+
 - Uses **text search with exact name** + "Tokyo"
 - **200m radius** but prioritizes nearby + name match
 - **Relevance validation** - checks if place name matches waypoint
 - Logs matched place name for verification
 
 ### Code Changes:
+
 ```javascript
 // Exact query with location
 const exactQuery = `${waypoint.name} Tokyo`;
@@ -40,6 +44,7 @@ for (const result of results) {
 ## 2. Relevance Validation
 
 ### New Function: `isRelevantPhoto()`
+
 Validates if Google Places result matches waypoint:
 
 ```javascript
@@ -51,6 +56,7 @@ isRelevantPhoto(waypointName, placeName) {
 ```
 
 ### Examples:
+
 - ✅ "Sumida River Walk" matches "Sumida River"
 - ✅ "Kaminarimon Gate" matches "Kaminarimon Thunder Gate"
 - ✅ "Senso-ji Temple" matches "Senso-ji"
@@ -59,15 +65,18 @@ isRelevantPhoto(waypointName, placeName) {
 ## 3. Curated Fallback System
 
 ### Before:
+
 - Generic "tokyo japan" search
 - Random images
 
 ### After:
+
 - **Specific search terms** for each known location
 - 50+ predefined location mappings
 - High-quality Unsplash images (1200x800)
 
 ### Location Mappings:
+
 ```javascript
 'sumida river' → 'sumida+river+tokyo+historic'
 'kaminarimon' → 'kaminarimon+gate+asakusa'
@@ -82,10 +91,12 @@ isRelevantPhoto(waypointName, placeName) {
 ## 4. Higher Quality Photos
 
 ### Resolution Increased:
+
 - Before: 800x600px
 - After: **1200x800px** (50% larger, better quality)
 
 ### Source Priority:
+
 1. **Google Places photos** (real user photos from exact location)
 2. **Curated Unsplash** (specific location search)
 3. **Category Unsplash** (architecture, traditional, historic)
@@ -95,22 +106,26 @@ isRelevantPhoto(waypointName, placeName) {
 ### What Players Will See:
 
 #### Senso-ji Temple Area:
+
 - **Sumida River Walk**: Real photos of Sumida River with boats/bridges
 - **Kaminarimon Gate**: Actual photos of the red lantern gate
 - **Nakamise Street**: Real shopping street with vendors
 - **Senso-ji**: Temple buildings, pagoda, worshippers
 
 #### Tokyo Tower Area:
+
 - **Tokyo Tower**: Historic and modern tower photos
 - **Zojoji Temple**: Real temple buildings with tower backdrop
 - **Shiba Park**: Park photos with tower views
 
 #### Shibuya:
+
 - **Hachiko Statue**: Actual statue photos
 - **Shibuya Crossing**: Real crossing with crowds
 - **Center Gai**: Shopping street photos
 
 ### If Google Places Fails:
+
 - Falls back to **specific Unsplash searches**
 - "sumida+river+tokyo+historic" = River photos
 - "kaminarimon+gate+asakusa" = Gate photos
@@ -119,6 +134,7 @@ isRelevantPhoto(waypointName, placeName) {
 ## 🎯 Accuracy Improvements
 
 ### Matching System:
+
 1. Searches "[Waypoint Name] Tokyo" in Google Places
 2. Filters results to find name match
 3. Validates relevance (word matching)
@@ -126,7 +142,9 @@ isRelevantPhoto(waypointName, placeName) {
 5. Falls back to curated searches if no match
 
 ### Console Output:
+
 Players can see matching in console:
+
 ```
 📸 Loading photos for Sumida River Walk...
 ✅ Matched Sumida River Walk with Sumida River
@@ -134,6 +152,7 @@ Players can see matching in console:
 ```
 
 Or if no exact match:
+
 ```
 📸 Loading photos for Hoppy Street...
 ⚠️ No exact match for Hoppy Street, using fallback
@@ -148,13 +167,14 @@ Or if no exact match:
 2. **Start Game** and collect waypoint
 3. **Watch Console** for matching messages
 4. **Check Photos**:
-   - Do they show the actual location?
-   - Are they relevant to the waypoint name?
-   - Do they look like historical/real places?
+    - Do they show the actual location?
+    - Are they relevant to the waypoint name?
+    - Do they look like historical/real places?
 
 ### Test Cases:
 
 #### High Confidence (Should Match):
+
 - ✅ Senso-ji Temple → "Senso-ji"
 - ✅ Tokyo Tower → "Tokyo Tower"
 - ✅ Meiji Shrine → "Meiji Jingu"
@@ -162,35 +182,40 @@ Or if no exact match:
 - ✅ Shibuya Crossing → "Shibuya Scramble Crossing"
 
 #### Medium Confidence (Should Match or Fallback):
+
 - ⚠️ Sumida River Walk → "Sumida River" or fallback
 - ⚠️ Hoppy Street → Fallback to "asakusa+izakaya"
 - ⚠️ Nakamise Shopping → "Nakamise-dori" or fallback
 
 #### Low Confidence (Uses Fallback):
+
 - 📷 Hidden alley names → Category fallback
 - 📷 Descriptive locations → Specific Unsplash search
 
 ## 📝 Files Modified
 
 1. **`dynamic_photo_loader.js`**
-   - Line 50-106: Enhanced search with relevance checking
-   - Line 108-128: New relevance validation function
-   - Line 130-199: Curated fallback system with 50+ locations
-   - Photo quality: 800x600 → 1200x800
+    - Line 50-106: Enhanced search with relevance checking
+    - Line 108-128: New relevance validation function
+    - Line 130-199: Curated fallback system with 50+ locations
+    - Photo quality: 800x600 → 1200x800
 
 ## 💡 Key Improvements
 
 ### Accuracy:
+
 - ✅ Name matching ensures relevant photos
 - ✅ 50+ specific location mappings
 - ✅ Validation rejects non-relevant results
 
 ### Quality:
+
 - ✅ Higher resolution (1200x800)
 - ✅ Real location photos from Google Maps
 - ✅ Curated Unsplash as backup
 
 ### Transparency:
+
 - ✅ Console logs show matching process
 - ✅ Players can verify photo relevance
 - ✅ Developers can debug mismatches
@@ -200,6 +225,7 @@ Or if no exact match:
 **Implementation Complete - Ready to Test**
 
 The photo system now:
+
 1. ✅ Searches for exact location by name
 2. ✅ Validates relevance before using photos
 3. ✅ Falls back to curated specific searches

@@ -1,54 +1,58 @@
 # Ash Twin Project - Development Progress
 
 ## Project Overview
+
 An interactive 3D globe to Street View navigation application that allows users to explore locations around the world with a cinematic transition experience.
 
 ## Version History
 
 ### v3.0 - Current Release (Latest)
+
 **Date:** 2025
 **Status:** Production Ready
 
 #### Features Implemented
+
 - **Interactive Street View Navigation**
-  - Full mouse control support (drag to look around)
-  - Click-to-teleport functionality
-  - Navigation arrows for street movement
-  - Scroll wheel zoom capability
-  - Position tracking and logging
+    - Full mouse control support (drag to look around)
+    - Click-to-teleport functionality
+    - Navigation arrows for street movement
+    - Scroll wheel zoom capability
+    - Position tracking and logging
 
 - **3D Globe Integration**
-  - Cesium-powered 3D Earth visualization
-  - Click-to-select location functionality
-  - Location markers with coordinates display
-  - Smooth camera fly-to animations
+    - Cesium-powered 3D Earth visualization
+    - Click-to-select location functionality
+    - Location markers with coordinates display
+    - Smooth camera fly-to animations
 
 - **Cinematic Transitions**
-  - Smooth camera descent from space to ground level
-  - Fade transition between globe and Street View (1.5s)
-  - Coordinated layer management during transitions
-  - 2-second camera animation for dramatic effect
+    - Smooth camera descent from space to ground level
+    - Fade transition between globe and Street View (1.5s)
+    - Coordinated layer management during transitions
+    - 2-second camera animation for dramatic effect
 
 - **User Interface Enhancements**
-  - On-screen mouse controls guide
-  - Dynamic location coordinates display
-  - Cyberpunk-themed UI design
-  - Context-sensitive button states
-  - Real-time position updates
+    - On-screen mouse controls guide
+    - Dynamic location coordinates display
+    - Cyberpunk-themed UI design
+    - Context-sensitive button states
+    - Real-time position updates
 
 - **Performance Optimizations**
-  - Simplified CSS architecture
-  - Clean pointer-events hierarchy
-  - Optimized layer z-index management
-  - Efficient event listener implementation
+    - Simplified CSS architecture
+    - Clean pointer-events hierarchy
+    - Optimized layer z-index management
+    - Efficient event listener implementation
 
 - **Security Improvements**
-  - API keys moved to external config file
-  - .gitignore configured to prevent key leaks
-  - config.example.js template for developers
-  - Dynamic API key loading system
+    - API keys moved to external config file
+    - .gitignore configured to prevent key leaks
+    - config.example.js template for developers
+    - Dynamic API key loading system
 
 #### Technical Improvements
+
 - Fixed complex pointer-events blocking interactions
 - Removed hardcoded location dependencies
 - Implemented dynamic location selection
@@ -56,6 +60,7 @@ An interactive 3D globe to Street View navigation application that allows users 
 - Cleaned up CSS for better maintainability
 
 #### Bug Fixes
+
 - Street View mouse input not responding
 - Complex pointer-events hierarchy issues
 - Missing camera transition animations
@@ -64,7 +69,9 @@ An interactive 3D globe to Street View navigation application that allows users 
 ---
 
 ### v2.0 - 3D Globe to Street View Transition
+
 **Features:**
+
 - Smooth camera fly-down animation
 - Fade transition between views
 - Enhanced visual effects
@@ -72,7 +79,9 @@ An interactive 3D globe to Street View navigation application that allows users 
 ---
 
 ### v1.0 - Initial Release
+
 **Features:**
+
 - Street View treasure hunt game
 - Trail Mode functionality
 - Basic globe integration
@@ -82,16 +91,19 @@ An interactive 3D globe to Street View navigation application that allows users 
 ## Technology Stack
 
 ### Frontend
+
 - **HTML5** - Structure and layout
 - **CSS3** - Styling with custom cyberpunk theme
 - **JavaScript (ES6+)** - Application logic
 
 ### APIs & Libraries
+
 - **Cesium.js** - 3D globe rendering and camera controls
 - **Google Maps Street View API** - Street-level imagery
 - **Google Fonts** - Orbitron & Rajdhani typography
 
 ### Development Tools
+
 - **Git** - Version control
 - **GitHub** - Repository hosting
 - **GitHub CLI** - Repository management
@@ -125,14 +137,15 @@ ash-twin-project/
 ## Setup Requirements
 
 ### API Keys Needed
+
 1. **Cesium Ion Token** - For 3D globe rendering
-   - Get from: https://cesium.com/ion/signup
-   
+    - Get from: https://cesium.com/ion/signup
 2. **Google Maps API Key** - For Street View
-   - Get from: https://console.cloud.google.com/
-   - Enable: Maps JavaScript API & Street View Static API
+    - Get from: https://console.cloud.google.com/
+    - Enable: Maps JavaScript API & Street View Static API
 
 ### Installation
+
 1. Clone the repository
 2. Copy `config.example.js` to `config.js`
 3. Add your API keys to `config.js`
@@ -162,6 +175,7 @@ ash-twin-project/
 ## Future Roadmap
 
 ### Planned Features
+
 - [ ] Multiple location presets
 - [ ] Bookmark/favorite locations
 - [ ] Share location URLs
@@ -172,12 +186,14 @@ ash-twin-project/
 - [ ] Multi-language support
 
 ### Performance Enhancements
+
 - [ ] Lazy loading for faster initial load
 - [ ] Progressive Web App (PWA) support
 - [ ] Service worker for offline capability
 - [ ] Image optimization and caching
 
 ### UI/UX Improvements
+
 - [ ] Dark/light theme toggle
 - [ ] Customizable control positions
 - [ ] Keyboard shortcuts reference
@@ -198,6 +214,7 @@ ash-twin-project/
 ## Contributing
 
 This is a solo project, but contributions are welcome! Please ensure:
+
 - Code follows existing style conventions
 - API keys are never committed
 - All new features are documented
@@ -208,29 +225,37 @@ This is a solo project, but contributions are welcome! Please ensure:
 ## Changelog
 
 ### [3.0.0] - 2025
+
 #### Added
+
 - Mouse controls guide overlay
 - Dynamic location selection system
 - Position tracking and logging
 - Security improvements with external config
 
 #### Changed
+
 - Simplified CSS architecture
 - Optimized pointer-events handling
 - Improved transition smoothness
 
 #### Fixed
+
 - Street View mouse input issues
 - Complex pointer-events blocking
 - Hardcoded location dependencies
 
 ### [2.0.0] - 2025
+
 #### Added
+
 - 3D globe to Street View transition
 - Camera fly-down animation
 
 ### [1.0.0] - 2025
+
 #### Added
+
 - Initial release
 - Street View treasure hunt game
 - Trail Mode functionality

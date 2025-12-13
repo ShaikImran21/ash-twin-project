@@ -1,287 +1,297 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Setup Verification - Ash Twin Project</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-    
-    .container {
-      background: rgba(0, 0, 0, 0.3);
-      padding: 30px;
-      border-radius: 12px;
-      backdrop-filter: blur(10px);
-    }
-    
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    
-    .test-item {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    
-    .status {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      flex-shrink: 0;
-    }
-    
-    .status.pass {
-      background: #10b981;
-    }
-    
-    .status.fail {
-      background: #ef4444;
-    }
-    
-    .status.pending {
-      background: #fbbf24;
-    }
-    
-    .test-content {
-      flex: 1;
-    }
-    
-    .test-name {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-    
-    .test-detail {
-      font-size: 14px;
-      opacity: 0.9;
-    }
-    
-    button {
-      background: #d4af37;
-      color: #1a1a2e;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 6px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      margin: 20px auto;
-      display: block;
-    }
-    
-    button:hover {
-      background: #f0c945;
-    }
-    
-    .summary {
-      text-align: center;
-      margin-top: 30px;
-      padding: 20px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-    }
-    
-    .code {
-      background: rgba(0, 0, 0, 0.5);
-      padding: 10px;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      margin: 10px 0;
-      overflow-x: auto;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>🔍 Setup Verification</h1>
-    
-    <div id="tests">
-      <div class="test-item">
-        <div class="status pending">⏳</div>
-        <div class="test-content">
-          <div class="test-name">Location Data</div>
-          <div class="test-detail" id="test-data">Checking verse_data_enhanced.js...</div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Setup Verification - Ash Twin Project</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                max-width: 800px;
+                margin: 50px auto;
+                padding: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+
+            .container {
+                background: rgba(0, 0, 0, 0.3);
+                padding: 30px;
+                border-radius: 12px;
+                backdrop-filter: blur(10px);
+            }
+
+            h1 {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            .test-item {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 15px;
+                margin: 10px 0;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .status {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                flex-shrink: 0;
+            }
+
+            .status.pass {
+                background: #10b981;
+            }
+
+            .status.fail {
+                background: #ef4444;
+            }
+
+            .status.pending {
+                background: #fbbf24;
+            }
+
+            .test-content {
+                flex: 1;
+            }
+
+            .test-name {
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+
+            .test-detail {
+                font-size: 14px;
+                opacity: 0.9;
+            }
+
+            button {
+                background: #d4af37;
+                color: #1a1a2e;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                margin: 20px auto;
+                display: block;
+            }
+
+            button:hover {
+                background: #f0c945;
+            }
+
+            .summary {
+                text-align: center;
+                margin-top: 30px;
+                padding: 20px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+            }
+
+            .code {
+                background: rgba(0, 0, 0, 0.5);
+                padding: 10px;
+                border-radius: 4px;
+                font-family: 'Courier New', monospace;
+                margin: 10px 0;
+                overflow-x: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔍 Setup Verification</h1>
+
+            <div id="tests">
+                <div class="test-item">
+                    <div class="status pending">⏳</div>
+                    <div class="test-content">
+                        <div class="test-name">Location Data</div>
+                        <div class="test-detail" id="test-data">
+                            Checking verse_data_enhanced.js...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="test-item">
+                    <div class="status pending">⏳</div>
+                    <div class="test-content">
+                        <div class="test-name">Google Maps API</div>
+                        <div class="test-detail" id="test-api">
+                            Checking API key configuration...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="test-item">
+                    <div class="status pending">⏳</div>
+                    <div class="test-content">
+                        <div class="test-name">Audio Assets</div>
+                        <div class="test-detail" id="test-audio">Checking audio files...</div>
+                    </div>
+                </div>
+
+                <div class="test-item">
+                    <div class="status pending">⏳</div>
+                    <div class="test-content">
+                        <div class="test-name">Main HTML File</div>
+                        <div class="test-detail" id="test-html">Checking index.html...</div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="runTests()">Run Tests</button>
+
+            <div class="summary" id="summary" style="display: none">
+                <h2 id="summary-text"></h2>
+                <p id="summary-detail"></p>
+            </div>
+
+            <div style="margin-top: 30px; font-size: 14px; opacity: 0.8">
+                <strong>Next Steps:</strong>
+                <ul>
+                    <li>Fix any failed tests above</li>
+                    <li>Add your Google Maps API key to index.html</li>
+                    <li>Add audio files to assets/ folder (optional)</li>
+                    <li>Open index.html in your browser</li>
+                </ul>
+            </div>
         </div>
-      </div>
-      
-      <div class="test-item">
-        <div class="status pending">⏳</div>
-        <div class="test-content">
-          <div class="test-name">Google Maps API</div>
-          <div class="test-detail" id="test-api">Checking API key configuration...</div>
-        </div>
-      </div>
-      
-      <div class="test-item">
-        <div class="status pending">⏳</div>
-        <div class="test-content">
-          <div class="test-name">Audio Assets</div>
-          <div class="test-detail" id="test-audio">Checking audio files...</div>
-        </div>
-      </div>
-      
-      <div class="test-item">
-        <div class="status pending">⏳</div>
-        <div class="test-content">
-          <div class="test-name">Main HTML File</div>
-          <div class="test-detail" id="test-html">Checking index.html...</div>
-        </div>
-      </div>
-    </div>
-    
-    <button onclick="runTests()">Run Tests</button>
-    
-    <div class="summary" id="summary" style="display:none;">
-      <h2 id="summary-text"></h2>
-      <p id="summary-detail"></p>
-    </div>
-    
-    <div style="margin-top: 30px; font-size: 14px; opacity: 0.8;">
-      <strong>Next Steps:</strong>
-      <ul>
-        <li>Fix any failed tests above</li>
-        <li>Add your Google Maps API key to index.html</li>
-        <li>Add audio files to assets/ folder (optional)</li>
-        <li>Open index.html in your browser</li>
-      </ul>
-    </div>
-  </div>
-  
-  <script src="verse_data_enhanced.js"></script>
-  <script>
-    const tests = {
-      data: { passed: false, message: '' },
-      api: { passed: false, message: '' },
-      audio: { passed: false, message: '' },
-      html: { passed: false, message: '' }
-    };
-    
-    async function runTests() {
-      // Test 1: Location Data
-      if (typeof HUNT_LOCATIONS_WITH_PATHS !== 'undefined' && HUNT_LOCATIONS_WITH_PATHS.length > 0) {
-        tests.data.passed = true;
-        tests.data.message = `✓ Found ${HUNT_LOCATIONS_WITH_PATHS.length} locations`;
-        updateTest('test-data', tests.data, true);
-      } else {
-        tests.data.message = '✗ verse_data_enhanced.js not loaded or empty';
-        updateTest('test-data', tests.data, false);
-      }
-      
-      // Test 2: Google Maps API (check if placeholder is still there)
-      try {
-        const response = await fetch('index.html');
-        const html = await response.text();
-        
-        if (html.includes('YOUR_API_KEY_HERE')) {
-          tests.api.message = '⚠ API key not configured yet (still has placeholder)';
-          updateTest('test-api', tests.api, false);
-        } else if (html.includes('maps.googleapis.com/maps/api/js?key=')) {
-          tests.api.passed = true;
-          tests.api.message = '✓ API key appears to be configured';
-          updateTest('test-api', tests.api, true);
-        } else {
-          tests.api.message = '✗ Could not find Maps API script tag';
-          updateTest('test-api', tests.api, false);
-        }
-      } catch (e) {
-        tests.api.message = '✗ Could not read index.html';
-        updateTest('test-api', tests.api, false);
-      }
-      
-      // Test 3: Audio Assets
-      const audioFiles = ['boom.wav', 'collect.wav', 'warp.wav'];
-      let foundCount = 0;
-      
-      for (const file of audioFiles) {
-        try {
-          const response = await fetch(`assets/${file}`, { method: 'HEAD' });
-          if (response.ok) foundCount++;
-        } catch (e) {
-          // File not found
-        }
-      }
-      
-      if (foundCount === 3) {
-        tests.audio.passed = true;
-        tests.audio.message = '✓ All 3 audio files found';
-        updateTest('test-audio', tests.audio, true);
-      } else if (foundCount > 0) {
-        tests.audio.message = `⚠ Only ${foundCount}/3 audio files found (optional but recommended)`;
-        updateTest('test-audio', tests.audio, false);
-      } else {
-        tests.audio.message = '⚠ No audio files found (optional - game will work without them)';
-        updateTest('test-audio', tests.audio, false);
-      }
-      
-      // Test 4: Main HTML
-      try {
-        const response = await fetch('index.html');
-        if (response.ok) {
-          tests.html.passed = true;
-          tests.html.message = '✓ index.html exists and is accessible';
-          updateTest('test-html', tests.html, true);
-        }
-      } catch (e) {
-        tests.html.message = '✗ index.html not found or not accessible';
-        updateTest('test-html', tests.html, false);
-      }
-      
-      // Show summary
-      showSummary();
-    }
-    
-    function updateTest(elementId, test, passed) {
-      const element = document.getElementById(elementId);
-      const statusElement = element.parentElement.querySelector('.status');
-      
-      element.textContent = test.message;
-      statusElement.className = 'status ' + (passed ? 'pass' : 'fail');
-      statusElement.textContent = passed ? '✓' : '✗';
-    }
-    
-    function showSummary() {
-      const summary = document.getElementById('summary');
-      const summaryText = document.getElementById('summary-text');
-      const summaryDetail = document.getElementById('summary-detail');
-      
-      const passedCount = Object.values(tests).filter(t => t.passed).length;
-      const totalCount = Object.keys(tests).length;
-      
-      summary.style.display = 'block';
-      
-      if (passedCount === totalCount) {
-        summaryText.textContent = '🎉 All Tests Passed!';
-        summaryDetail.innerHTML = 'Your setup is complete. Open <strong>index.html</strong> to start playing!';
-      } else if (passedCount >= 2) {
-        summaryText.textContent = '⚠ Almost Ready';
-        summaryDetail.innerHTML = `${passedCount}/${totalCount} tests passed. Fix the issues above and you're good to go!`;
-      } else {
-        summaryText.textContent = '❌ Setup Incomplete';
-        summaryDetail.innerHTML = 'Please address the failed tests above. Check <strong>SETUP_GUIDE.md</strong> for help.';
-      }
-    }
-    
-    // Auto-run on load
-    window.addEventListener('load', () => {
-      setTimeout(runTests, 500);
-    });
-  </script>
-</body>
+
+        <script src="verse_data_enhanced.js"></script>
+        <script>
+            const tests = {
+                data: { passed: false, message: '' },
+                api: { passed: false, message: '' },
+                audio: { passed: false, message: '' },
+                html: { passed: false, message: '' },
+            };
+
+            async function runTests() {
+                // Test 1: Location Data
+                if (
+                    typeof HUNT_LOCATIONS_WITH_PATHS !== 'undefined' &&
+                    HUNT_LOCATIONS_WITH_PATHS.length > 0
+                ) {
+                    tests.data.passed = true;
+                    tests.data.message = `✓ Found ${HUNT_LOCATIONS_WITH_PATHS.length} locations`;
+                    updateTest('test-data', tests.data, true);
+                } else {
+                    tests.data.message = '✗ verse_data_enhanced.js not loaded or empty';
+                    updateTest('test-data', tests.data, false);
+                }
+
+                // Test 2: Google Maps API (check if placeholder is still there)
+                try {
+                    const response = await fetch('index.html');
+                    const html = await response.text();
+
+                    if (html.includes('YOUR_API_KEY_HERE')) {
+                        tests.api.message = '⚠ API key not configured yet (still has placeholder)';
+                        updateTest('test-api', tests.api, false);
+                    } else if (html.includes('maps.googleapis.com/maps/api/js?key=')) {
+                        tests.api.passed = true;
+                        tests.api.message = '✓ API key appears to be configured';
+                        updateTest('test-api', tests.api, true);
+                    } else {
+                        tests.api.message = '✗ Could not find Maps API script tag';
+                        updateTest('test-api', tests.api, false);
+                    }
+                } catch (e) {
+                    tests.api.message = '✗ Could not read index.html';
+                    updateTest('test-api', tests.api, false);
+                }
+
+                // Test 3: Audio Assets
+                const audioFiles = ['boom.wav', 'collect.wav', 'warp.wav'];
+                let foundCount = 0;
+
+                for (const file of audioFiles) {
+                    try {
+                        const response = await fetch(`assets/${file}`, { method: 'HEAD' });
+                        if (response.ok) foundCount++;
+                    } catch (e) {
+                        // File not found
+                    }
+                }
+
+                if (foundCount === 3) {
+                    tests.audio.passed = true;
+                    tests.audio.message = '✓ All 3 audio files found';
+                    updateTest('test-audio', tests.audio, true);
+                } else if (foundCount > 0) {
+                    tests.audio.message = `⚠ Only ${foundCount}/3 audio files found (optional but recommended)`;
+                    updateTest('test-audio', tests.audio, false);
+                } else {
+                    tests.audio.message =
+                        '⚠ No audio files found (optional - game will work without them)';
+                    updateTest('test-audio', tests.audio, false);
+                }
+
+                // Test 4: Main HTML
+                try {
+                    const response = await fetch('index.html');
+                    if (response.ok) {
+                        tests.html.passed = true;
+                        tests.html.message = '✓ index.html exists and is accessible';
+                        updateTest('test-html', tests.html, true);
+                    }
+                } catch (e) {
+                    tests.html.message = '✗ index.html not found or not accessible';
+                    updateTest('test-html', tests.html, false);
+                }
+
+                // Show summary
+                showSummary();
+            }
+
+            function updateTest(elementId, test, passed) {
+                const element = document.getElementById(elementId);
+                const statusElement = element.parentElement.querySelector('.status');
+
+                element.textContent = test.message;
+                statusElement.className = 'status ' + (passed ? 'pass' : 'fail');
+                statusElement.textContent = passed ? '✓' : '✗';
+            }
+
+            function showSummary() {
+                const summary = document.getElementById('summary');
+                const summaryText = document.getElementById('summary-text');
+                const summaryDetail = document.getElementById('summary-detail');
+
+                const passedCount = Object.values(tests).filter(t => t.passed).length;
+                const totalCount = Object.keys(tests).length;
+
+                summary.style.display = 'block';
+
+                if (passedCount === totalCount) {
+                    summaryText.textContent = '🎉 All Tests Passed!';
+                    summaryDetail.innerHTML =
+                        'Your setup is complete. Open <strong>index.html</strong> to start playing!';
+                } else if (passedCount >= 2) {
+                    summaryText.textContent = '⚠ Almost Ready';
+                    summaryDetail.innerHTML = `${passedCount}/${totalCount} tests passed. Fix the issues above and you're good to go!`;
+                } else {
+                    summaryText.textContent = '❌ Setup Incomplete';
+                    summaryDetail.innerHTML =
+                        'Please address the failed tests above. Check <strong>SETUP_GUIDE.md</strong> for help.';
+                }
+            }
+
+            // Auto-run on load
+            window.addEventListener('load', () => {
+                setTimeout(runTests, 500);
+            });
+        </script>
+    </body>
 </html>
