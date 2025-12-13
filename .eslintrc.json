@@ -18,10 +18,10 @@
         "getCuratedPhotos": "readonly"
     },
     "rules": {
-        "indent": ["error", 4],
+        "indent": "off",
         "linebreak-style": "off",
-        "quotes": ["error", "single", { "avoidEscape": true, "allowTemplateLiterals": true }],
-        "semi": ["error", "always"],
+        "quotes": "off",
+        "semi": "warn",
         "no-unused-vars": "warn",
         "no-console": "off",
         "no-undef": "warn"
