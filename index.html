@@ -1,0 +1,2469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASH TWIN PROJECT: PATHFINDER</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <!-- <script src="verse_data_enhanced.js"></script> -->
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAvCO_bcpW5Zuh-Wmizb9AuH8_RxHl6BVY&libraries=geometry"></script>
+
+    <style>
+        /* === CORE VARIABLES === */
+        :root {
+            --neon-pink: #ff0055; 
+            --neon-purple: #9d00ff;
+            --neon-cyan: #00ffff;
+            --nomai-gold: #ffcc00; 
+            --void-bg: #050510;
+            --glass: rgba(20, 5, 10, 0.95);
+            --glass-border: rgba(255, 0, 85, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body, html { 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background-color: var(--void-bg); 
+            font-family: 'Rajdhani', sans-serif; 
+            color: white;
+            user-select: none;
+        }
+
+        /* === SCANLINES EFFECT === */
+        body::after {
+            content: "";
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: 
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 9999; /* Above everything to not block */
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            animation: scanline-drift 8s linear infinite;
+        }
+
+        @keyframes scanline-drift {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100%; }
+        }
+
+        /* === LAYERS === */
+        #cesiumContainer { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 1;
+            background: #000 !important; /* Force black background for visibility */
+        }
+        
+        #street-view-layer { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 2; 
+            opacity: 0; 
+            transition: opacity 1.5s ease-in-out;
+            pointer-events: none;
+            visibility: hidden;
+        }
+        
+        #street-view-layer.active { 
+            opacity: 1; 
+            pointer-events: auto;
+            visibility: visible;
+        }
+        
+        #street-view { 
+            width: 100%; 
+            height: 100%; 
+        }
+        
+        #ar-overlay { 
+            pointer-events: none; 
+            z-index: 10; 
+            width: 100%; 
+            height: 100%; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+        }
+
+        /* === HUD LAYER === */
+        #ui-layer { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 100; 
+            pointer-events: none; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+        }
+
+        /* === START BUTTON === */
+        .warp-container { 
+            position: absolute; 
+            top: 30px; 
+            right: 30px; 
+            pointer-events: auto;
+        }
+        
+        .warp-switch {
+            background: var(--glass); 
+            border: 2px solid var(--neon-pink); 
+            padding: 15px 40px;
+            font-family: 'Orbitron', monospace; 
+            font-size: 18px; 
+            letter-spacing: 2px; 
+            color: var(--neon-pink);
+            cursor: pointer; 
+            text-transform: uppercase; 
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            z-index: 9999 !important; /* Force to top */
+        }
+
+        .trail-mode-btn {
+            background: var(--glass); 
+            border: 2px solid var(--nomai-gold); 
+            padding: 12px 30px;
+            font-family: 'Orbitron', monospace; 
+            font-size: 16px; 
+            letter-spacing: 2px; 
+            color: var(--nomai-gold);
+            cursor: pointer; 
+            text-transform: uppercase; 
+            clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%);
+            box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            pointer-events: auto;
+        }
+
+        .trail-mode-btn:hover {
+            background: rgba(255, 193, 7, 0.1);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .trail-mode-btn.active {
+            background: rgba(255, 193, 7, 0.2);
+            border-color: var(--neon-pink);
+            animation: pulse-gold 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-gold {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 193, 7, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(255, 193, 7, 0.8); }
+        }
+
+        
+        .warp-switch::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 0, 85, 0.1), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .warp-switch:hover { 
+            background: var(--neon-pink); 
+            color: white; 
+            box-shadow: 0 0 40px var(--neon-pink);
+            transform: scale(1.05);
+        }
+
+        .warp-switch:active {
+            transform: scale(0.95);
+        }
+
+        /* === NAVIGATION HUD === */
+        .radar-container { 
+            align-self: center; 
+            margin-bottom: 20px; 
+            text-align: center; 
+            pointer-events: none;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        #hint-box {
+            background: rgba(0, 0, 0, 0.9); 
+            border: 2px solid var(--neon-pink); 
+            color: var(--neon-pink);
+            font-family: 'Rajdhani', sans-serif; 
+            font-weight: 700; 
+            font-size: 20px; 
+            padding: 15px 40px;
+            clip-path: polygon(5% 0, 100% 0, 100% 100%, 95% 100%, 0 100%, 0 0); 
+            box-shadow: 0 0 30px rgba(255, 0, 85, 0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        #hint-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-pink), transparent);
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        #nav-instruction {
+            font-family: 'Orbitron', monospace; 
+            color: var(--nomai-gold); 
+            font-size: 28px; 
+            margin-top: 15px; 
+            font-weight: 900;
+            text-shadow: 0 0 15px var(--neon-pink), 0 0 30px var(--neon-pink); 
+            text-transform: uppercase; 
+            letter-spacing: 3px;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { text-shadow: 0 0 15px var(--neon-pink), 0 0 30px var(--neon-pink); }
+            50% { text-shadow: 0 0 25px var(--neon-pink), 0 0 50px var(--neon-pink); }
+        }
+
+        /* === INVENTORY === */
+        #inventory-bar { 
+            display: flex; 
+            gap: 20px; 
+            margin-top: 15px; 
+            justify-content: center; 
+            pointer-events: none;
+        }
+        
+        .slot {
+            width: 80px; 
+            height: 80px; 
+            background: rgba(0, 0, 0, 0.8); 
+            border: 3px solid #333;
+            clip-path: polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%);
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 40px; 
+            transition: all 0.4s;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .slot::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            clip-path: polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%);
+        }
+        
+        .slot.filled { 
+            border-color: var(--neon-purple); 
+            box-shadow: 0 0 30px var(--neon-purple), inset 0 0 20px rgba(157, 0, 255, 0.3); 
+            background: rgba(157, 0, 255, 0.2);
+            animation: slot-collect 0.6s ease-out;
+        }
+
+        @keyframes slot-collect {
+            0% { transform: scale(1.5) rotate(180deg); opacity: 0; }
+            50% { transform: scale(1.2) rotate(90deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* === AR LOOT BOX === */
+        .loot-box {
+            position: absolute; 
+            width: 70px; 
+            height: 70px; 
+            pointer-events: auto; 
+            cursor: pointer;
+            background: radial-gradient(circle, rgba(255, 0, 85, 0.3), rgba(255, 0, 85, 0.1)); 
+            border: 3px solid var(--neon-pink); 
+            border-radius: 50%;
+            box-shadow: 
+                0 0 20px var(--neon-pink), 
+                0 0 40px var(--neon-pink),
+                inset 0 0 20px var(--neon-pink);
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 35px;
+            animation: float-spin 3s ease-in-out infinite;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s;
+        }
+
+        .loot-box::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border: 2px solid var(--neon-pink);
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        
+        .loot-box:hover { 
+            background: radial-gradient(circle, rgba(255, 0, 85, 0.6), rgba(255, 0, 85, 0.2)); 
+            transform: scale(1.3); 
+            box-shadow: 0 0 60px var(--neon-pink);
+        }
+
+        @keyframes float-spin { 
+            0%, 100% { transform: translateY(0) rotate(0deg); } 
+            50% { transform: translateY(-20px) rotate(180deg); } 
+        }
+
+        /* === DISTANCE INDICATOR === */
+        #distance-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 48px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #distance-indicator.visible {
+            opacity: 1;
+        }
+
+        /* === MODAL === */
+        #chrono-modal { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0, 0, 0, 0.95); 
+            z-index: 2000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            backdrop-filter: blur(10px);
+            animation: modal-appear 0.4s ease-out;
+        }
+
+        @keyframes modal-appear {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        .modal-content { 
+            background: linear-gradient(135deg, #050510 0%, #0a0a20 100%); 
+            border: 3px solid var(--nomai-gold); 
+            width: 90%; 
+            max-width: 600px; 
+            padding: 30px; 
+            box-shadow: 
+                0 0 60px rgba(255, 204, 0, 0.4),
+                inset 0 0 40px rgba(255, 204, 0, 0.1); 
+            text-align: center; 
+            pointer-events: auto;
+            clip-path: polygon(3% 0, 100% 0, 100% 97%, 97% 100%, 0 100%, 0 3%);
+            animation: modal-content-appear 0.6s ease-out;
+        }
+
+        @keyframes modal-content-appear {
+            0% { transform: scale(0.8) translateY(50px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        
+        .modal-header h2 { 
+            color: var(--nomai-gold); 
+            font-family: 'Orbitron', monospace; 
+            margin: 0 0 20px 0;
+            font-size: 32px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px var(--nomai-gold);
+        }
+
+        .modal-body {
+            margin: 20px 0;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-body p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #ccc;
+            margin: 15px 0;
+            text-align: left;
+            white-space: pre-line;
+        }
+
+        /* Photo Gallery Styles */
+        .photo-gallery {
+            margin-bottom: 20px;
+        }
+
+        .gallery-main-photo {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .gallery-thumbnails {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .gallery-thumb {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border: 2px solid var(--neon-cyan);
+            cursor: pointer;
+            transition: all 0.3s;
+            opacity: 0.6;
+            filter: sepia(20%) saturate(1.2);
+        }
+
+        .gallery-thumb:hover {
+            opacity: 1;
+            border-color: var(--neon-pink);
+            transform: scale(1.1);
+            box-shadow: 0 0 15px var(--neon-pink);
+        }
+
+        .gallery-thumb.active {
+            opacity: 1;
+            border-color: var(--nomai-gold);
+            box-shadow: 0 0 20px var(--nomai-gold);
+        }
+
+        .modal-description {
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .image-container { 
+            position: relative; 
+            margin: 20px 0; 
+            border: 2px solid var(--nomai-gold); 
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.3);
+        }
+        
+        #modal-img { 
+            width: 100%; 
+            height: 300px; 
+            object-fit: cover; 
+            filter: sepia(20%) saturate(1.2) contrast(1.1);
+        }
+
+        .timestamp {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 5px 15px;
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--nomai-gold);
+            font-size: 14px;
+            border: 1px solid var(--nomai-gold);
+        }
+        
+        .collect-btn { 
+            width: 100%; 
+            padding: 18px; 
+            background: var(--nomai-gold); 
+            color: #000; 
+            font-family: 'Orbitron', monospace; 
+            font-weight: 700; 
+            font-size: 20px; 
+            border: none; 
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
+        }
+
+        .collect-btn:hover {
+            background: #fff;
+            box-shadow: 0 0 40px rgba(255, 204, 0, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .collect-btn:active {
+            transform: translateY(0);
+        }
+
+        /* === UTILITIES === */
+        .hidden { 
+            display: none !important; 
+        }
+
+        /* === LOADING SCREEN === */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--void-bg);
+            z-index: 3000;
+            display: none; /* HIDE BY DEFAULT - GLOBE ALWAYS VISIBLE */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s;
+        }
+
+        #loading-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+            display: none;
+        }
+
+        .loading-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 24px;
+            color: var(--neon-pink);
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px var(--neon-pink);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .loading-bar {
+            width: 300px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 50%;
+            background: var(--neon-pink);
+            animation: loading-slide 1.5s ease-in-out infinite;
+        }
+
+        @keyframes loading-slide {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(300%); }
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 768px) {
+            .warp-switch {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+
+            #hint-box {
+                font-size: 16px;
+                padding: 12px 30px;
+            }
+
+            #nav-instruction {
+                font-size: 22px;
+            }
+
+            .slot {
+                width: 60px;
+                height: 60px;
+                font-size: 30px;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+
+            .modal-header h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-text">INITIALIZING PATHFINDER PROTOCOL...</div>
+        <div class="loading-bar"></div>
+    </div>
+
+    <!-- Cesium 3D Globe -->
+    <div id="cesiumContainer"></div>
+    
+    <!-- Street View Layer -->
+    <div id="street-view-layer">
+        <div id="street-view"></div>
+        <div id="ar-overlay"></div>
+        <div id="distance-indicator"></div>
+    </div>
+    
+
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+        <div class="warp-container" style="display: flex; gap: 15px; align-items: center;">
+            <button class="trail-mode-btn" id="trail-btn" onclick="toggleTrailMode()" style="display: none;">
+                <span class="btn-text">🎬 TRAIL MODE</span>
+            </button>
+            <div class="warp-switch" onclick="window.startGame()">
+                <span class="nomai-text">INITIATE SEQUENCE</span>
+            </div>
+        </div>
+        <div class="radar-container">
+            <div id="hint-box">SYSTEM ONLINE. AWAITING INPUT.</div>
+            <div id="nav-instruction"></div>
+            <div id="inventory-bar">
+                <div class="slot" id="slot-0"></div>
+                <div class="slot" id="slot-1"></div>
+                <div class="slot" id="slot-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collection Modal -->
+    <div id="chrono-modal" class="hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">UNKNOWN MEMORY</h2>
+            </div>
+            <div class="modal-body">
+                <!-- Photo Gallery -->
+                <div class="photo-gallery">
+                    <div class="gallery-main-photo">
+                        <img id="modal-img" src="" alt="Historical Record">
+                        <span class="timestamp" id="modal-year">ARCHIVE RESTORED</span>
+                    </div>
+                    <div class="gallery-thumbnails" id="gallery-thumbs">
+                        <!-- Thumbnails will be inserted here dynamically -->
+                    </div>
+                </div>
+                <div class="modal-description">
+                    <p id="modal-desc">Decryption complete...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="collect-btn" onclick="window.confirmCollection()">💾 SECURE & CONTINUE MISSION</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════
+        // 1. CONFIGURATION
+        // ═══════════════════════════════════════════════════════════
+        const CONFIG = {
+            CESIUM_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkZDliZmU3YS01YmQ3LTQ2ZGMtOTI4Yy1lZTMzZDMxOWIwMDUiLCJpZCI6MzY2NzI0LCJpYXQiOjE3NjQ4NjU3NDV9.Ajfr3pZSAk1F4xg0M2kyLgkEAFYmrYyCSlUPuPmvYQ4", // Get free token from https://cesium.com/ion/signup
+            GOOGLE_MAPS_KEY: "AIzaSyAvCO_bcpW5Zuh-Wmizb9AuH8_RxHl6BVY",
+            SPAWN_DISTANCE: { min: 250, max: 500 }, // meters
+            COLLECTION_RADIUS: 50, // meters to collect
+            GEIGER_UPDATE_INTERVAL: 100, // ms
+            MAX_SPAWN_ATTEMPTS: 10, // Maximum attempts to find valid street spawn
+        };
+
+        // ═══════════════════════════════════════════════════════════
+        // 2. HUNT LOCATIONS WITH PREDETERMINED PATHS (Manually Tested)
+        // Each location has 3 tested spawn points for varied gameplay
+        // ═══════════════════════════════════════════════════════════
+        const HUNT_LOCATIONS_WITH_PATHS = [
+            {
+                name: "Senso-ji Temple",
+                coords: { lat: 35.7148, lng: 139.7967 },
+                year: "628 AD",
+                history: "Tokyo's oldest temple, founded in the 7th century when a golden statue of Kannon was found in the Sumida River. The iconic Kaminarimon gate with its massive red lantern welcomes millions of visitors annually.",
+                photo: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600",
+                emoji: "⛩️",
+                spawnPoints: [
+                    { lat: 35.7170, lng: 139.7990, heading: 220, description: "East approach via Sumida River", difficulty: "medium" },
+                    { lat: 35.7125, lng: 139.7945, heading: 45, description: "Main Nakamise Street entrance", difficulty: "easy" },
+                    { lat: 35.7120, lng: 139.7970, heading: 0, description: "South temple district path", difficulty: "medium" }
+                ]
+            },
+            {
+                name: "Tokyo Tower",
+                coords: { lat: 35.6586, lng: 139.7454 },
+                year: "1958",
+                history: "Inspired by the Eiffel Tower, this 333-meter tall communications tower became a symbol of Japan's post-war rebirth. Built with steel from American tanks, it represented hope and technological advancement.",
+                photo: "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=600",
+                emoji: "🗼",
+                spawnPoints: [
+                    { lat: 35.6610, lng: 139.7470, heading: 180, description: "North entrance via Shiba Park", difficulty: "easy" },
+                    { lat: 35.6560, lng: 139.7435, heading: 30, description: "South residential approach", difficulty: "medium" },
+                    { lat: 35.6575, lng: 139.7480, heading: 270, description: "East Azabu district route", difficulty: "hard" }
+                ]
+            },
+            {
+                name: "Meiji Shrine",
+                coords: { lat: 35.6764, lng: 139.6993 },
+                year: "1920",
+                history: "Dedicated to Emperor Meiji and Empress Shoken, who led Japan into the modern era. The shrine sits in a 170-acre forest of 120,000 trees donated from across Japan, creating a sacred space in the heart of Tokyo.",
+                photo: "https://images.unsplash.com/photo-1528164344705-47542687000d?w=600",
+                emoji: "🌳",
+                spawnPoints: [
+                    { lat: 35.6795, lng: 139.7015, heading: 225, description: "Harajuku Station entrance", difficulty: "easy" },
+                    { lat: 35.6740, lng: 139.6970, heading: 45, description: "South forest path", difficulty: "medium" },
+                    { lat: 35.6775, lng: 139.6965, heading: 135, description: "West Yoyogi Park approach", difficulty: "medium" }
+                ]
+            },
+            {
+                name: "Imperial Palace",
+                coords: { lat: 35.6852, lng: 139.7528 },
+                year: "1457",
+                history: "Built on the ruins of Edo Castle, home of the Tokugawa shogunate. The palace grounds span 3.41 square kilometers, surrounded by moats and massive stone walls that have witnessed centuries of Japanese history.",
+                photo: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=600",
+                emoji: "🏯",
+                spawnPoints: [
+                    { lat: 35.6880, lng: 139.7550, heading: 180, description: "Tokyo Station plaza approach", difficulty: "easy" },
+                    { lat: 35.6825, lng: 139.7505, heading: 45, description: "Sakuradamon Gate entrance", difficulty: "medium" },
+                    { lat: 35.6840, lng: 139.7565, heading: 270, description: "East Gardens side path", difficulty: "medium" }
+                ]
+            },
+            {
+                name: "Shibuya Crossing",
+                coords: { lat: 35.6595, lng: 139.7004 },
+                year: "1973",
+                history: "The world's busiest pedestrian crossing, with up to 3,000 people crossing at once during peak times. Known as 'The Scramble,' it epitomizes Tokyo's organized chaos and has appeared in countless films.",
+                photo: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=600",
+                emoji: "🚦",
+                spawnPoints: [
+                    { lat: 35.6615, lng: 139.6985, heading: 135, description: "Hachiko exit approach", difficulty: "easy" },
+                    { lat: 35.6575, lng: 139.7020, heading: 315, description: "Center-gai shopping street", difficulty: "medium" },
+                    { lat: 35.6580, lng: 139.6985, heading: 45, description: "South Dogenzaka hill route", difficulty: "hard" }
+                ]
+            },
+            {
+                name: "Tsukiji Outer Market",
+                coords: { lat: 35.6654, lng: 139.7707 },
+                year: "1935",
+                history: "Once home to the world's largest fish market, this area has been Tokyo's seafood hub for generations. Though the inner market moved in 2018, the outer market continues its 400-year tradition of serving the freshest ingredients.",
+                photo: "https://images.unsplash.com/photo-1535007852-b4b5e2c6153c?w=600",
+                emoji: "🐟",
+                spawnPoints: [
+                    { lat: 35.6675, lng: 139.7730, heading: 225, description: "Tsukiji Station entrance", difficulty: "easy" },
+                    { lat: 35.6635, lng: 139.7685, heading: 45, description: "Sumida River waterfront", difficulty: "medium" },
+                    { lat: 35.6640, lng: 139.7730, heading: 315, description: "Market back streets", difficulty: "medium" }
+                ]
+            },
+            {
+                name: "Ueno Park",
+                coords: { lat: 35.7153, lng: 139.7739 },
+                year: "1873",
+                history: "Japan's first public park, established on the grounds of the former Kan'ei-ji temple. Home to over 1,000 cherry trees, it becomes a sea of pink during hanami season. The park houses multiple museums, a zoo, and countless cultural treasures.",
+                photo: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=600",
+                emoji: "🌸",
+                spawnPoints: [
+                    { lat: 35.7175, lng: 139.7760, heading: 225, description: "Ueno Station main entrance", difficulty: "easy" },
+                    { lat: 35.7130, lng: 139.7720, heading: 45, description: "Shinobazu Pond south path", difficulty: "medium" },
+                    { lat: 35.7165, lng: 139.7715, heading: 90, description: "West zoo entrance route", difficulty: "medium" }
+                ]
+            },
+            {
+                name: "Akihabara",
+                coords: { lat: 35.7022, lng: 139.7744 },
+                year: "1949",
+                history: "Born from post-war black market electronics trading, 'Electric Town' evolved into the global center of otaku culture. Its transformation from radio parts dealers to anime, manga, and gaming paradise mirrors Japan's technological and cultural evolution.",
+                photo: "https://images.unsplash.com/photo-1542640244-7e672d6cef4e?w=600",
+                emoji: "⚡",
+                spawnPoints: [
+                    { lat: 35.7045, lng: 139.7765, heading: 225, description: "Akihabara Station Electric Town exit", difficulty: "easy" },
+                    { lat: 35.7000, lng: 139.7725, heading: 45, description: "Chuo Street main drag", difficulty: "easy" },
+                    { lat: 35.7010, lng: 139.7770, heading: 270, description: "Back alley maid cafe district", difficulty: "medium" }
+                ]
+            },
+            {
+                name: "Roppongi Hills",
+                coords: { lat: 35.6605, lng: 139.7292 },
+                year: "2003",
+                history: "A 17-year urban development project that transformed a residential area into a city within a city. The 238-meter Mori Tower symbolizes modern Tokyo's ambition, housing art museums, luxury shopping, and spectacular observation decks.",
+                photo: "https://images.unsplash.com/photo-1540181682513-92e69f7ef072?w=600",
+                emoji: "🏙️",
+                spawnPoints: [
+                    { lat: 35.6625, lng: 139.7310, heading: 225, description: "Roppongi Station main exit", difficulty: "easy" },
+                    { lat: 35.6585, lng: 139.7275, heading: 45, description: "Tokyo Midtown approach", difficulty: "medium" },
+                    { lat: 35.6590, lng: 139.7315, heading: 270, description: "Azabu-juban luxury district", difficulty: "hard" }
+                ]
+            }
+        ];
+
+        // Use the locations with paths
+        const HUNT_LOCATIONS = HUNT_LOCATIONS_WITH_PATHS;
+
+        // ═══════════════════════════════════════════════════════════
+        // ADVENTURE PATHS - Sequential waypoint system
+        // ═══════════════════════════════════════════════════════════
+        // Load adventure paths from external files (see script tags at bottom)
+        // Files: adventure_paths_complete.js, adventure_paths_part2.js, adventure_paths_part3.js
+        // This will be populated after those scripts load
+        let ADVENTURE_PATHS = {};
+
+        // ═══════════════════════════════════════════════════════════
+        // 3. GLOBAL STATE
+        // ═══════════════════════════════════════════════════════════
+        const STATE = {
+            viewer: null,
+            streetView: null,
+            directionsService: null,
+            streetViewService: null,
+            audioCtx: new (window.AudioContext || window.webkitAudioContext)(),
+            currentLevel: 0,
+            currentPos: { lat: 35.6762, lng: 139.6503 },
+            activeLoot: null,
+            currentPath: [],
+            activePathIndex: 0,
+            usedLocations: [],
+            geigerTimer: null,
+            gameActive: false,
+            systemReady: false,
+            // NEW: Adventure Path System
+            currentAdventurePath: null,
+            currentWaypointIndex: 0,
+            visitedWaypoints: [],
+            adventureMode: true, // Enable new adventure path system
+        };
+
+        // ═══════════════════════════════════════════════════════════
+        // 4. INITIALIZATION
+        // ═══════════════════════════════════════════════════════════
+        
+        function waitForGoogleMaps() {
+            return new Promise((resolve) => {
+                if (window.google?.maps?.StreetViewPanorama && 
+                    window.google?.maps?.DirectionsService && 
+                    window.google?.maps?.StreetViewService) {
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (window.google?.maps?.StreetViewPanorama && 
+                            window.google?.maps?.DirectionsService && 
+                            window.google?.maps?.StreetViewService) {
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                    
+                    // Timeout after 10 seconds
+                    setTimeout(() => {
+                        clearInterval(checkInterval);
+                        console.error("Google Maps failed to load completely");
+                        resolve(); // Resolve anyway to show better error message
+                    }, 10000);
+                }
+            });
+        }
+
+        async function initializeSystems() {
+            try {
+                // Wait for Google Maps
+                await waitForGoogleMaps();
+                console.log("✅ Google Maps API loaded");
+
+                // Initialize Cesium (3D Globe)
+                await initCesium();
+
+                // Initialize Street View
+                await initStreetView();
+                
+                // Initialize Dynamic Photo Loader
+                if (typeof DynamicPhotoLoader !== 'undefined' && STATE.map) {
+                    photoLoader = new DynamicPhotoLoader(CONFIG.GOOGLE_MAPS_KEY);
+                    photoLoader.init(STATE.map);
+                    console.log("✅ Dynamic Photo Loader initialized");
+                }
+
+                // Mark system as ready
+                STATE.systemReady = true;
+                
+                // Hide loading screen
+                const loadingScreen = document.getElementById('loading-screen');
+                loadingScreen.classList.add('fade-out');
+                setTimeout(() => loadingScreen.style.display = 'none', 500);
+
+                console.log("✅ All systems initialized");
+            } catch (error) {
+                console.error("❌ Initialization failed:", error);
+                alert("System initialization failed. Please refresh and check API keys.");
+            }
+        }
+
+        async function initCesium() {
+            try {
+                Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkZDliZmU3YS01YmQ3LTQ2ZGMtOTI4Yy1lZTMzZDMxOWIwMDUiLCJpZCI6MzY2NzI0LCJpYXQiOjE3NjQ4NjU3NDV9.Ajfr3pZSAk1F4xg0M2kyLgkEAFYmrYyCSlUPuPmvYQ4';
+
+                // Basic default viewer - everything works
+                STATE.viewer = new Cesium.Viewer('cesiumContainer');
+
+                // Hide Cesium UI elements using CSS (doesn't affect globe functionality)
+                STATE.viewer.animation.container.style.display = 'none';
+                STATE.viewer.timeline.container.style.display = 'none';
+                STATE.viewer.bottomContainer.style.display = 'none';
+
+                // Fly to Tokyo
+                STATE.viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(139.6503, 35.6762, 10000000),
+                    duration: 3
+                });
+
+                console.log("✅ Cesium globe with clean UI");
+            } catch (error) {
+                console.error("❌ Cesium error:", error);
+            }
+        }
+
+        async function initStreetView() {
+            const container = document.getElementById("street-view");
+            if (!container) {
+                throw new Error("Street View container not found");
+            }
+
+            // Ensure google.maps is fully loaded
+            if (!google?.maps?.StreetViewPanorama) {
+                throw new Error("Google Maps StreetViewPanorama not available");
+            }
+
+            STATE.streetView = new google.maps.StreetViewPanorama(container, {
+                position: STATE.currentPos,
+                pov: { heading: 0, pitch: 0 },
+                zoom: 1,
+                disableDefaultUI: true,
+                linksControl: true,
+                clickToGo: true,
+                showRoadLabels: false,
+                motionTracking: false,
+                motionTrackingControl: false
+            });
+
+            STATE.streetView.addListener("position_changed", handlePositionChange);
+            STATE.streetView.addListener("pov_changed", updateAROverlay);
+
+            // Ensure all Google Maps services are available
+            if (!google?.maps?.DirectionsService || !google?.maps?.StreetViewService) {
+                throw new Error("Google Maps services not fully loaded");
+            }
+
+            STATE.directionsService = new google.maps.DirectionsService();
+            STATE.streetViewService = new google.maps.StreetViewService();
+
+            console.log("✅ Street View initialized");
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 5. GAME LOGIC
+        // ═══════════════════════════════════════════════════════════
+
+        window.startGame = async function() {
+            if (!STATE.systemReady) {
+                alert("⚠️ System initializing... Please wait.");
+                return;
+            }
+
+            if (STATE.gameActive) {
+                return;
+            }
+
+            if (STATE.audioCtx.state === 'suspended') {
+                await STATE.audioCtx.resume();
+            }
+
+            STATE.gameActive = true;
+            STATE.usedLocations = [];
+            STATE.currentLevel = 0;
+
+            // Show Trail Mode button when game starts
+            const trailBtn = document.getElementById('trail-btn');
+            if (trailBtn) {
+                trailBtn.style.display = 'inline-block';
+            }
+
+            resetInventory();
+            await startLevel(0);
+        };
+
+        async function startLevel(levelIndex) {
+            const btn = document.querySelector('.nomai-text');
+            btn.textContent = `CALCULATING JUMP ${levelIndex + 1}/3...`;
+            console.log(`🌀 Starting Level ${levelIndex + 1}`);
+
+            // Check if adventure mode is enabled
+            if (STATE.adventureMode && ADVENTURE_PATHS) {
+                // NEW: Use Adventure Path System
+                const availableLocations = Object.keys(ADVENTURE_PATHS).filter(
+                    loc => !STATE.usedLocations.includes(loc)
+                );
+
+                // DEBUG: Check if paths loaded
+                if (Object.keys(ADVENTURE_PATHS).length === 0) {
+                    console.error("❌ ADVENTURE_PATHS is empty! External files may not have loaded.");
+                    console.log("Falling back to old system...");
+                    STATE.adventureMode = false; // Temporarily disable
+                    await startLevel(levelIndex); // Retry with old system
+                    return;
+                }
+
+                if (availableLocations.length === 0) {
+                    alert("All adventures completed! Restarting...");
+                    STATE.usedLocations = [];
+                    return;
+                }
+
+                const selectedLocation = availableLocations[
+                    Math.floor(Math.random() * availableLocations.length)
+                ];
+                STATE.usedLocations.push(selectedLocation);
+
+                // Get adventure paths for this location
+                const paths = ADVENTURE_PATHS[selectedLocation].paths;
+                const selectedPath = paths[Math.floor(Math.random() * paths.length)];
+                
+                STATE.currentAdventurePath = selectedPath;
+                STATE.currentWaypointIndex = 0;
+                STATE.visitedWaypoints = [];
+                
+                console.log(`🗺️ Adventure: ${selectedLocation}`);
+                console.log(`🛤️ Path: ${selectedPath.name} (${selectedPath.difficulty})`);
+                console.log(`📍 ${selectedPath.waypoints.length} waypoints + final destination`);
+
+                // Set active loot to first waypoint
+                const firstWaypoint = selectedPath.waypoints[0];
+                STATE.activeLoot = {
+                    name: firstWaypoint.name,
+                    coords: firstWaypoint.coords,
+                    emoji: firstWaypoint.emoji,
+                    description: firstWaypoint.description,
+                    history: firstWaypoint.history || firstWaypoint.description,
+                    year: firstWaypoint.year || 'Present',
+                    photo: firstWaypoint.photos ? firstWaypoint.photos[0] : null,
+                    photos: firstWaypoint.photos || [],
+                    isWaypoint: true,
+                    waypointOrder: firstWaypoint.order,
+                    reward: firstWaypoint.reward
+                };
+
+                // Spawn at a reasonable distance from first waypoint (250-500m)
+                const spawnDistance = CONFIG.SPAWN_DISTANCE.min + 
+                    Math.random() * (CONFIG.SPAWN_DISTANCE.max - CONFIG.SPAWN_DISTANCE.min);
+                const spawnNearby = offsetCoordinates(firstWaypoint.coords, spawnDistance);
+                STATE.currentPos = {
+                    lat: spawnNearby.lat,
+                    lng: spawnNearby.lng,
+                    heading: firstWaypoint.heading || 0
+                };
+                
+                console.log(`📍 Spawned ${Math.round(spawnDistance)}m from first waypoint`);
+
+                btn.textContent = `WAYPOINT 1/${selectedPath.waypoints.length}: ${firstWaypoint.emoji} ${firstWaypoint.name}`;
+                
+                document.getElementById('hint-box').textContent = 
+                    `ADVENTURE: ${selectedPath.name} | Waypoint 1/${selectedPath.waypoints.length}`;
+
+                await warpToLocation();
+                
+            } else {
+                // OLD SYSTEM: Original spawn point system
+                const availableLocations = HUNT_LOCATIONS_WITH_PATHS.filter(
+                    loc => !STATE.usedLocations.includes(loc.name)
+                );
+
+                if (availableLocations.length === 0) {
+                    alert("All locations completed! Restarting...");
+                    STATE.usedLocations = [];
+                    return;
+                }
+
+                const selected = availableLocations[
+                    Math.floor(Math.random() * availableLocations.length)
+                ];
+                STATE.usedLocations.push(selected.name);
+
+                console.log(`📍 Target: ${selected.name}`);
+
+                STATE.activeLoot = { ...selected };
+                
+                btn.textContent = `SELECTING APPROACH PATH...`;
+                const randomPathIndex = Math.floor(Math.random() * selected.spawnPoints.length);
+                const spawnPoint = selected.spawnPoints[randomPathIndex];
+                
+                console.log(`🛤️ Path selected: ${spawnPoint.description} (${spawnPoint.difficulty})`);
+                
+                STATE.selectedSpawnPoint = spawnPoint;
+                STATE.currentPos = spawnPoint;
+
+                const actualDist = calculateDistance(
+                    STATE.currentPos.lat,
+                    STATE.currentPos.lng,
+                    STATE.activeLoot.coords.lat,
+                    STATE.activeLoot.coords.lng
+                );
+
+                console.log(`🎮 Spawn: ${Math.round(actualDist)}m from target (Street View verified)`);
+
+                await calculateRoute();
+                await warpToLocation();
+            }
+        }
+
+        async function findValidStreetSpawn(target) {
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = CONFIG.MAX_SPAWN_ATTEMPTS;
+
+                function trySpawn() {
+                    if (attempts >= maxAttempts) {
+                        console.warn("⚠️ Max spawn attempts reached, using best estimate");
+                        resolve(generateSpawnPoint(target));
+                        return;
+                    }
+
+                    attempts++;
+                    const candidateSpawn = generateSpawnPoint(target);
+
+                    // Check if Street View is available at this location
+                    STATE.streetViewService.getPanorama(
+                        {
+                            location: candidateSpawn,
+                            radius: 50, // Search within 50m
+                            source: google.maps.StreetViewSource.OUTDOOR
+                        },
+                        (data, status) => {
+                            if (status === 'OK' && data && data.location) {
+                                // Found valid street view location
+                                const validPos = {
+                                    lat: data.location.latLng.lat(),
+                                    lng: data.location.latLng.lng()
+                                };
+
+                                // Verify distance is still in range
+                                const dist = calculateDistance(
+                                    validPos.lat,
+                                    validPos.lng,
+                                    target.lat,
+                                    target.lng
+                                );
+
+                                if (dist >= CONFIG.SPAWN_DISTANCE.min && 
+                                    dist <= CONFIG.SPAWN_DISTANCE.max) {
+                                    console.log(`✅ Valid street spawn found (attempt ${attempts}): ${Math.round(dist)}m from target`);
+                                    resolve(validPos);
+                                } else {
+                                    console.log(`⚠️ Street View found but distance ${Math.round(dist)}m out of range, retrying...`);
+                                    setTimeout(trySpawn, 100);
+                                }
+                            } else {
+                                console.log(`⚠️ No Street View at attempt ${attempts}, retrying...`);
+                                setTimeout(trySpawn, 100);
+                            }
+                        }
+                    );
+                }
+
+                trySpawn();
+            });
+        }
+
+        function generateSpawnPoint(target) {
+            const minDist = CONFIG.SPAWN_DISTANCE.min;
+            const maxDist = CONFIG.SPAWN_DISTANCE.max;
+            const distance = minDist + Math.random() * (maxDist - minDist);
+            
+            // Generate random angle, but prefer cardinal directions for better street alignment
+            const cardinalAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+            const useCardinal = Math.random() > 0.3; // 70% chance to use cardinal direction
+            const angle = useCardinal 
+                ? (cardinalAngles[Math.floor(Math.random() * cardinalAngles.length)] * Math.PI / 180)
+                : (Math.random() * 2 * Math.PI);
+
+            const latOffset = (distance / 111320) * Math.cos(angle);
+            const lngOffset = (distance / (111320 * Math.cos(target.lat * Math.PI / 180))) * Math.sin(angle);
+
+            return {
+                lat: target.lat + latOffset,
+                lng: target.lng + lngOffset
+            };
+        }
+
+        async function calculateRoute() {
+            return new Promise((resolve) => {
+                const request = {
+                    origin: STATE.currentPos,
+                    destination: STATE.activeLoot.coords,
+                    travelMode: 'WALKING'
+                };
+
+                STATE.directionsService.route(request, (result, status) => {
+                    if (status === 'OK' && result.routes && result.routes.length > 0) {
+                        STATE.currentPath = result.routes[0].overview_path;
+                        STATE.activePathIndex = 0;
+                        
+                        const distance = result.routes[0].legs[0].distance.text;
+                        const duration = result.routes[0].legs[0].duration.text;
+                        
+                        console.log(`🗺️ Route calculated: ${distance} (${duration})`);
+                        
+                        document.getElementById('hint-box').textContent = 
+                            `TARGET: ${STATE.activeLoot.name} | ${distance} away`;
+                        
+                        resolve(true);
+                    } else {
+                        console.warn("⚠️ Route calculation failed:", status);
+                        STATE.currentPath = [];
+                        const estDist = Math.round(calculateDistance(
+                            STATE.currentPos.lat,
+                            STATE.currentPos.lng,
+                            STATE.activeLoot.coords.lat,
+                            STATE.activeLoot.coords.lng
+                        ));
+                        document.getElementById('hint-box').textContent = 
+                            `TARGET: ${STATE.activeLoot.name} | ~${estDist}m away`;
+                        resolve(false);
+                    }
+                });
+            });
+        }
+
+        async function warpToLocation() {
+            playSound('WARP');
+            const streetLayer = document.getElementById('street-view-layer');
+            const btn = document.querySelector('.nomai-text');
+
+            if (STATE.viewer && !STATE.viewer.isDestroyed()) {
+                // Fly from space to near-ground view
+                STATE.viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(
+                        STATE.currentPos.lng,
+                        STATE.currentPos.lat,
+                        2000 // 2km altitude for better view
+                    ),
+                    duration: 3,
+                    orientation: {
+                        heading: Cesium.Math.toRadians(0),
+                        pitch: Cesium.Math.toRadians(-60), // 60 degrees down
+                        roll: 0.0
+                    },
+                    complete: () => activateStreetView()
+                });
+            } else {
+                activateStreetView();
+            }
+
+            function activateStreetView() {
+                streetLayer.classList.add('active');
+
+                if (STATE.streetView) {
+                    // Set position and verify it's valid
+                    STATE.streetView.setPosition(STATE.currentPos);
+                    
+                    // Orient camera toward the target
+                    const bearingToTarget = calculateBearing(
+                        STATE.currentPos.lat,
+                        STATE.currentPos.lng,
+                        STATE.activeLoot.coords.lat,
+                        STATE.activeLoot.coords.lng
+                    );
+                    
+                    STATE.streetView.setPov({ 
+                        heading: bearingToTarget, 
+                        pitch: 0 
+                    });
+
+                    // Verify we're actually on a street
+                    setTimeout(() => {
+                        const currentPos = STATE.streetView.getPosition();
+                        if (currentPos) {
+                            const actualPos = {
+                                lat: currentPos.lat(),
+                                lng: currentPos.lng()
+                            };
+                            const snapDist = calculateDistance(
+                                STATE.currentPos.lat,
+                                STATE.currentPos.lng,
+                                actualPos.lat,
+                                actualPos.lng
+                            );
+                            if (snapDist > 100) {
+                                console.log(`📍 Street View snapped ${Math.round(snapDist)}m to nearest road`);
+                                STATE.currentPos = actualPos;
+                            }
+                        }
+                        updateAROverlay();
+                    }, 500);
+                } else {
+                    console.error("❌ Street View not initialized");
+                    return;
+                }
+
+                spawnLootBox();
+                btn.textContent = `SECTOR ${STATE.currentLevel + 1} ACTIVE`;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 6. AR & NAVIGATION
+        // ═══════════════════════════════════════════════════════════
+
+        function handlePositionChange() {
+            const newPos = STATE.streetView.getPosition();
+            if (!newPos) return;
+
+            STATE.currentPos = { lat: newPos.lat(), lng: newPos.lng() };
+            updateAROverlay();
+
+            if (STATE.currentPath.length > 0) {
+                for (let i = STATE.activePathIndex; i < STATE.currentPath.length; i++) {
+                    const pathPoint = STATE.currentPath[i];
+                    const dist = calculateDistance(
+                        STATE.currentPos.lat,
+                        STATE.currentPos.lng,
+                        pathPoint.lat(),
+                        pathPoint.lng()
+                    );
+                    if (dist < 20) {
+                        STATE.activePathIndex = i;
+                    }
+                }
+            }
+        }
+
+        function updateAROverlay() {
+            if (!STATE.activeLoot || !STATE.streetView) return;
+
+            const lootBox = document.getElementById('target-loot');
+            if (!lootBox) return;
+
+            const pov = STATE.streetView.getPov();
+            if (!pov) return;
+
+            const container = document.getElementById('street-view');
+            const width = container.offsetWidth;
+            const height = container.offsetHeight;
+            const hFov = 180 / Math.pow(2, STATE.streetView.getZoom());
+
+            const distance = calculateDistance(
+                STATE.currentPos.lat,
+                STATE.currentPos.lng,
+                STATE.activeLoot.coords.lat,
+                STATE.activeLoot.coords.lng
+            );
+
+            const angleToTarget = calculateBearing(
+                STATE.currentPos.lat,
+                STATE.currentPos.lng,
+                STATE.activeLoot.coords.lat,
+                STATE.activeLoot.coords.lng
+            );
+
+            let navigationAngle = angleToTarget;
+            if (STATE.currentPath.length > 0) {
+                const lookAhead = Math.min(STATE.activePathIndex + 2, STATE.currentPath.length - 1);
+                const nextNode = STATE.currentPath[lookAhead];
+                navigationAngle = calculateBearing(
+                    STATE.currentPos.lat,
+                    STATE.currentPos.lng,
+                    nextNode.lat(),
+                    nextNode.lng()
+                );
+            }
+
+            updateNavigationText(navigationAngle, pov.heading, distance);
+            updateLootBoxPosition(angleToTarget, pov.heading, hFov, width, height, distance);
+        }
+
+        function updateNavigationText(targetAngle, currentHeading, distance) {
+            const navText = document.getElementById('nav-instruction');
+            let headingDiff = targetAngle - currentHeading;
+
+            while (headingDiff > 180) headingDiff -= 360;
+            while (headingDiff < -180) headingDiff += 360;
+
+            const roundedDist = Math.round(distance);
+
+            if (Math.abs(headingDiff) < 35) {
+                navText.textContent = `⬆️ SIGNAL LOCKED (${roundedDist}m)`;
+                navText.style.color = "#ff0055";
+                startGeiger(distance);
+            } else if (headingDiff > 0) {
+                navText.textContent = `➡️ TURN RIGHT`;
+                navText.style.color = "#ffcc00";
+                stopGeiger();
+            } else {
+                navText.textContent = `⬅️ TURN LEFT`;
+                navText.style.color = "#ffcc00";
+                stopGeiger();
+            }
+
+            const distIndicator = document.getElementById('distance-indicator');
+            if (distance < 100) {
+                distIndicator.textContent = `${roundedDist}m`;
+                distIndicator.classList.add('visible');
+            } else {
+                distIndicator.classList.remove('visible');
+            }
+        }
+
+        function updateLootBoxPosition(targetAngle, currentHeading, hFov, width, height, distance) {
+            const lootBox = document.getElementById('target-loot');
+            
+            if (distance > 500) {
+                lootBox.style.display = 'none';
+                return;
+            }
+
+            let angleDiff = targetAngle - currentHeading;
+            while (angleDiff > 180) angleDiff -= 360;
+            while (angleDiff < -180) angleDiff += 360;
+
+            const scale = Math.max(0.7, Math.min(1.5, 50 / distance));
+
+            if (Math.abs(angleDiff) < hFov / 1.5) {
+                const xPos = (width / 2) + (angleDiff / (hFov / 2)) * (width / 2);
+                lootBox.style.display = 'flex';
+                lootBox.style.left = (xPos - 35) + 'px';
+                lootBox.style.top = (height / 2 - 35) + 'px';
+                lootBox.style.transform = `scale(${scale})`;
+            } else {
+                lootBox.style.display = 'none';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 7. COLLECTION & PROGRESSION
+        // ═══════════════════════════════════════════════════════════
+
+        window.collectItem = function() {
+            const distance = calculateDistance(
+                STATE.currentPos.lat,
+                STATE.currentPos.lng,
+                STATE.activeLoot.coords.lat,
+                STATE.activeLoot.coords.lng
+            );
+
+            console.log(`🎯 Collection attempt: ${Math.round(distance)}m from target`);
+
+            if (distance > CONFIG.COLLECTION_RADIUS) {
+                alert(`⚠️ SIGNAL TOO WEAK\n\nYou are ${Math.round(distance)}m away.\nGet within ${CONFIG.COLLECTION_RADIUS}m to collect.`);
+                return;
+            }
+
+            console.log("✅ Item collected!");
+            showCollectionModal();
+            stopGeiger();
+        };
+
+        async function showCollectionModal() {
+            const modal = document.getElementById('chrono-modal');
+            modal.classList.remove('hidden');
+
+            document.getElementById('modal-title').textContent = STATE.activeLoot.name;
+            document.getElementById('modal-desc').textContent = STATE.activeLoot.history || STATE.activeLoot.description;
+            document.getElementById('modal-year').textContent = STATE.activeLoot.year || 'Present Day';
+            
+            // Try to load dynamic photos if available
+            let photos = STATE.activeLoot.photos || [];
+            
+            if (photoLoader && STATE.activeLoot.coords) {
+                try {
+                    console.log(`📸 Loading photos for ${STATE.activeLoot.name}...`);
+                    const dynamicPhotos = await photoLoader.getPhotosForWaypoint({
+                        name: STATE.activeLoot.name,
+                        coords: STATE.activeLoot.coords,
+                        category: STATE.activeLoot.category,
+                        description: STATE.activeLoot.description
+                    });
+                    
+                    if (dynamicPhotos && dynamicPhotos.length > 0) {
+                        photos = dynamicPhotos;
+                        console.log(`✅ Loaded ${photos.length} dynamic photos`);
+                    }
+                } catch (error) {
+                    console.error('⚠️ Failed to load dynamic photos:', error);
+                }
+            }
+            
+            // Set main photo
+            const mainPhoto = photos[0] || 
+                STATE.activeLoot.photo || 
+                "https://via.placeholder.com/600x300?text=Historical+Location";
+            document.getElementById('modal-img').src = mainPhoto;
+            
+            // Add photo gallery thumbnails if multiple photos exist
+            const galleryThumbs = document.getElementById('gallery-thumbs');
+            galleryThumbs.innerHTML = ''; // Clear existing
+            
+            if (photos && photos.length > 1) {
+                photos.forEach((photoUrl, index) => {
+                    const thumb = document.createElement('img');
+                    thumb.src = photoUrl;
+                    thumb.alt = `Photo ${index + 1}`;
+                    thumb.style.cursor = 'pointer';
+                    thumb.style.width = '80px';
+                    thumb.style.height = '60px';
+                    thumb.style.objectFit = 'cover';
+                    thumb.style.margin = '5px';
+                    thumb.style.border = index === 0 ? '2px solid #00ffff' : '2px solid transparent';
+                    thumb.style.borderRadius = '4px';
+                    thumb.onclick = function() {
+                        document.getElementById('modal-img').src = photoUrl;
+                        // Update borders
+                        galleryThumbs.querySelectorAll('img').forEach((img, i) => {
+                            img.style.border = i === index ? '2px solid #00ffff' : '2px solid transparent';
+                        });
+                    };
+                    galleryThumbs.appendChild(thumb);
+                });
+            }
+        }
+
+        window.confirmCollection = function() {
+            playSound('COLLECT');
+            document.getElementById('chrono-modal').classList.add('hidden');
+            
+            // Stop trail mode if active (will need to recalculate for next waypoint)
+            if (trailModeActive) {
+                stopTrailMode();
+            }
+
+            // Check if adventure mode
+            if (STATE.adventureMode && STATE.currentAdventurePath) {
+                // Check if this was the FINAL DESTINATION (main destination)
+                if (STATE.activeLoot.isFinalDestination) {
+                    console.log("🎉 MAIN DESTINATION REACHED! Path Complete!");
+                    
+                    // Show completion message
+                    setTimeout(() => {
+                        alert(`🎉 PATH COMPLETE!\n\n` +
+                              `You've completed: ${STATE.currentAdventurePath.name}\n` +
+                              `Visited all ${STATE.currentAdventurePath.waypoints.length} waypoints and reached the main destination!\n\n` +
+                              `Starting next adventure...`);
+                        
+                        // Transition to next level/location
+                        transitionToNextLevel();
+                    }, 500);
+                    return;
+                }
+                
+                // ADVENTURE PATH MODE: Progress through waypoints
+                STATE.visitedWaypoints.push(STATE.currentWaypointIndex);
+                STATE.currentWaypointIndex++;
+
+                // Check if all waypoints completed
+                if (STATE.currentWaypointIndex >= STATE.currentAdventurePath.waypoints.length) {
+                    // All waypoints done! Go to final destination (main destination)
+                    console.log("🎯 All waypoints completed! Heading to MAIN destination...");
+                    
+                    // Get the main destination from the current location
+                    const currentLocation = Object.keys(ADVENTURE_PATHS).find(loc => {
+                        return ADVENTURE_PATHS[loc].paths.some(path => 
+                            path.pathId === STATE.currentAdventurePath.pathId
+                        );
+                    });
+                    
+                    if (!currentLocation || !ADVENTURE_PATHS[currentLocation].mainDestination) {
+                        console.error("❌ Main destination not found!");
+                        alert("⚠️ Error: Main destination not configured. Starting new level...");
+                        transitionToNextLevel();
+                        return;
+                    }
+                    
+                    const mainDest = ADVENTURE_PATHS[currentLocation].mainDestination;
+                    STATE.activeLoot = {
+                        name: mainDest.name,
+                        coords: mainDest.coords,
+                        emoji: mainDest.emoji,
+                        description: mainDest.description,
+                        history: mainDest.history,
+                        year: mainDest.foundingYear,
+                        photo: mainDest.photos ? mainDest.photos[0] : null,
+                        isFinalDestination: true,
+                        reward: 100 // Main destination bonus reward
+                    };
+
+                    const btn = document.querySelector('.nomai-text');
+                    btn.textContent = `FINAL: ${mainDest.emoji} ${mainDest.name}`;
+                    
+                    document.getElementById('hint-box').textContent = 
+                        `🏁 MAIN DESTINATION: ${mainDest.name}`;
+
+                    console.log(`🏁 Navigate to the main destination: ${mainDest.name}!`);
+                    
+                } else {
+                    // Move to next waypoint
+                    const nextWaypoint = STATE.currentAdventurePath.waypoints[STATE.currentWaypointIndex];
+                    STATE.activeLoot = {
+                        name: nextWaypoint.name,
+                        coords: nextWaypoint.coords,
+                        emoji: nextWaypoint.emoji,
+                        description: nextWaypoint.description,
+                        history: nextWaypoint.history || nextWaypoint.description,
+                        year: nextWaypoint.year || 'Present',
+                        photo: nextWaypoint.photos ? nextWaypoint.photos[0] : null,
+                        photos: nextWaypoint.photos || [],
+                        isWaypoint: true,
+                        waypointOrder: nextWaypoint.order,
+                        reward: nextWaypoint.reward
+                    };
+
+                    const btn = document.querySelector('.nomai-text');
+                    const totalWaypoints = STATE.currentAdventurePath.waypoints.length;
+                    btn.textContent = `WAYPOINT ${nextWaypoint.order}/${totalWaypoints}: ${nextWaypoint.emoji} ${nextWaypoint.name}`;
+                    
+                    document.getElementById('hint-box').textContent = 
+                        `${STATE.currentAdventurePath.name} | Waypoint ${nextWaypoint.order}/${totalWaypoints}`;
+
+                    console.log(`📍 Next waypoint: ${nextWaypoint.order}. ${nextWaypoint.name}`);
+                }
+                
+            } else {
+                // OLD MODE: Standard collection
+                const slots = document.querySelectorAll('.slot');
+                if (slots[STATE.currentLevel]) {
+                    slots[STATE.currentLevel].classList.add('filled');
+                    slots[STATE.currentLevel].textContent = "⛩️";
+                }
+
+                STATE.currentLevel++;
+
+                if (STATE.currentLevel >= 3) {
+                    setTimeout(() => {
+                        alert("🎉 MISSION COMPLETE!\n\n" +
+                              "All temporal anomalies secured.\n" +
+                              "Timeline stabilized.\n\n" +
+                              "Press OK to restart.");
+                        STATE.gameActive = false;
+                        resetGame();
+                    }, 500);
+                } else {
+                    alert(`✅ MEMORY SECURED\n\nJumping to Sector ${STATE.currentLevel + 1}...`);
+                    transitionToNextLevel();
+                }
+            }
+        };
+
+        function transitionToNextLevel() {
+            const streetLayer = document.getElementById('street-view-layer');
+            streetLayer.classList.remove('active');
+
+            if (STATE.viewer && !STATE.viewer.isDestroyed()) {
+                // Zoom back out to space view
+                STATE.viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(
+                        STATE.currentPos.lng,
+                        STATE.currentPos.lat,
+                        15000000 // Higher altitude for space view
+                    ),
+                    duration: 2.5,
+                    orientation: {
+                        heading: Cesium.Math.toRadians(0),
+                        pitch: Cesium.Math.toRadians(-90),
+                        roll: 0.0
+                    }
+                });
+            }
+
+            setTimeout(() => startLevel(STATE.currentLevel), 3000);
+        }
+
+        function resetGame() {
+            STATE.currentLevel = 0;
+            STATE.usedLocations = [];
+            STATE.gameActive = false;
+            
+            const streetLayer = document.getElementById('street-view-layer');
+            streetLayer.classList.remove('active');
+            
+            resetInventory();
+            
+            document.getElementById('hint-box').textContent = "SYSTEM ONLINE. AWAITING INPUT.";
+            document.getElementById('nav-instruction').textContent = "";
+            document.querySelector('.nomai-text').textContent = "INITIATE SEQUENCE";
+
+            if (STATE.viewer && !STATE.viewer.isDestroyed()) {
+                STATE.viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(139.6503, 35.6762, 15000000),
+                    duration: 2.5,
+                    orientation: {
+                        heading: Cesium.Math.toRadians(0),
+                        pitch: Cesium.Math.toRadians(-90),
+                        roll: 0.0
+                    }
+                });
+            }
+        }
+
+        function resetInventory() {
+            document.querySelectorAll('.slot').forEach(slot => {
+                slot.classList.remove('filled');
+                slot.textContent = '';
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 8. UTILITIES
+        // ═══════════════════════════════════════════════════════════
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // Helper: Offset coordinates by distance in meters (random direction)
+        function offsetCoordinates(coords, distanceMeters) {
+            const R = 6371e3; // Earth's radius in meters
+            const angle = Math.random() * 2 * Math.PI; // Random direction
+            
+            const δLat = (distanceMeters * Math.cos(angle)) / R;
+            const δLng = (distanceMeters * Math.sin(angle)) / (R * Math.cos(coords.lat * Math.PI / 180));
+            
+            return {
+                lat: coords.lat + (δLat * 180 / Math.PI),
+                lng: coords.lng + (δLng * 180 / Math.PI)
+            };
+        }
+
+        // Helper: Interpolate points between two coordinates for smooth trail
+        function interpolatePoints(start, end, pathArray) {
+            const distance = calculateDistance(start.lat, start.lng, end.lat, end.lng);
+            const numPoints = Math.max(Math.floor(distance / 15), 1); // Point every ~15 meters
+            
+            for (let i = 1; i <= numPoints; i++) {
+                const fraction = i / numPoints;
+                pathArray.push({
+                    lat: start.lat + (end.lat - start.lat) * fraction,
+                    lng: start.lng + (end.lng - start.lng) * fraction
+                });
+            }
+        }
+
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const y = Math.sin(Δλ) * Math.cos(φ2);
+            const x = Math.cos(φ1) * Math.sin(φ2) -
+                      Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+            let bearing = Math.atan2(y, x) * 180 / Math.PI;
+            return (bearing + 360) % 360;
+        }
+
+        function spawnLootBox() {
+            const container = document.getElementById('ar-overlay');
+            container.innerHTML = '';
+
+            const box = document.createElement('div');
+            box.className = 'loot-box';
+            box.id = 'target-loot';
+            box.textContent = "🌸";
+            box.onclick = (e) => {
+                e.stopPropagation();
+                window.collectItem();
+            };
+
+            container.appendChild(box);
+            updateAROverlay();
+        }
+
+        function playSound(type) {
+            try {
+                const osc = STATE.audioCtx.createOscillator();
+                const gain = STATE.audioCtx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(STATE.audioCtx.destination);
+
+                if (type === 'WARP') {
+                    osc.frequency.value = 440;
+                    gain.gain.setValueAtTime(0.3, STATE.audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, STATE.audioCtx.currentTime + 0.5);
+                    osc.stop(STATE.audioCtx.currentTime + 0.5);
+                } else if (type === 'COLLECT') {
+                    osc.frequency.value = 880;
+                    gain.gain.setValueAtTime(0.2, STATE.audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, STATE.audioCtx.currentTime + 0.3);
+                    osc.stop(STATE.audioCtx.currentTime + 0.3);
+                }
+
+                osc.start();
+            } catch (e) {
+                console.log('Audio error:', e);
+            }
+        }
+
+        function startGeiger(distance) {
+            if (STATE.geigerTimer) return;
+
+            const interval = Math.max(CONFIG.GEIGER_UPDATE_INTERVAL, distance * 5);
+            
+            STATE.geigerTimer = setTimeout(() => {
+                playGeigerClick();
+                STATE.geigerTimer = null;
+                if (STATE.gameActive) {
+                    startGeiger(distance);
+                }
+            }, interval);
+        }
+
+        function stopGeiger() {
+            if (STATE.geigerTimer) {
+                clearTimeout(STATE.geigerTimer);
+                STATE.geigerTimer = null;
+            }
+        }
+
+        function playGeigerClick() {
+            try {
+                const buffer = STATE.audioCtx.createBuffer(1, 400, STATE.audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < 400; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const source = STATE.audioCtx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(STATE.audioCtx.destination);
+                source.start();
+            } catch (e) {
+                console.log('Geiger error:', e);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 9. START APPLICATION
+        // ═══════════════════════════════════════════════════════════
+
+        // Force hide loading screen after 3 seconds as a fallback
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen && !loadingScreen.classList.contains('fade-out')) {
+                console.log("⚠️ Force-hiding loading screen (timeout)");
+                loadingScreen.classList.add('fade-out');
+                setTimeout(() => loadingScreen.style.display = 'none', 500);
+            }
+        }, 3000);
+
+        // ═══════════════════════════════════════════════════════════
+        // TRAIL MODE - RDR2 Style Cinematic Path Following
+        // ═══════════════════════════════════════════════════════════
+        let trailModeActive = false;
+        let trailModeInterval = null;
+        let currentPathStep = 0;
+        let trailPath = [];
+
+        function toggleTrailMode() {
+            const btn = document.getElementById('trail-btn');
+            
+            if (!trailModeActive) {
+                // Start trail mode
+                trailModeActive = true;
+                btn.classList.add('active');
+                btn.innerHTML = '<span class="btn-text">⏸️ STOP TRAIL</span>';
+                startTrailMode();
+                console.log("🎬 Trail Mode ACTIVATED");
+            } else {
+                // Stop trail mode
+                stopTrailMode();
+            }
+        }
+
+        function startTrailMode() {
+            if (!STATE.streetView || !STATE.activeLoot) {
+                alert("⚠️ No active mission. Start a level first!");
+                stopTrailMode();
+                return;
+            }
+
+            // Reset trail path variables
+            currentPathStep = 0;
+            trailPath = [];
+
+            // Check if adventure mode
+            if (STATE.adventureMode && STATE.currentAdventurePath) {
+                // ADVENTURE MODE: Show route to CURRENT waypoint only (subroute)
+                const currentPos = STATE.streetView.getPosition();
+                const targetPos = STATE.activeLoot.coords;
+                
+                // Validate coordinates
+                if (!currentPos || !targetPos || !targetPos.lat || !targetPos.lng) {
+                    console.error("❌ Invalid coordinates for trail mode");
+                    alert("⚠️ Invalid location data. Cannot start trail mode.");
+                    stopTrailMode();
+                    return;
+                }
+                
+                console.log(`🎬 Starting trail from (${currentPos.lat()}, ${currentPos.lng()}) to (${targetPos.lat}, ${targetPos.lng})`);
+                
+                // Use Google Directions to get walking path to current waypoint
+                const directionsService = new google.maps.DirectionsService();
+                
+                directionsService.route({
+                    origin: currentPos,
+                    destination: new google.maps.LatLng(targetPos.lat, targetPos.lng),
+                    travelMode: google.maps.TravelMode.WALKING
+                }, (result, status) => {
+                    if (status === 'OK' && result.routes && result.routes.length > 0) {
+                        // Extract path points from directions
+                        const route = result.routes[0];
+                        trailPath = [];
+                        
+                        if (!route.legs || route.legs.length === 0) {
+                            console.error("❌ No route legs found");
+                            stopTrailMode();
+                            return;
+                        }
+                        
+                        route.legs[0].steps.forEach(step => {
+                            // Get waypoints along each step
+                            const points = step.path;
+                            
+                            // Interpolate between points for smoother motion
+                            for (let i = 0; i < points.length - 1; i++) {
+                                const start = points[i];
+                                const end = points[i + 1];
+                                
+                                // Calculate distance between points
+                                const distance = google.maps.geometry.spherical.computeDistanceBetween(start, end);
+                                
+                                // Add start point
+                                trailPath.push({
+                                    lat: start.lat(),
+                                    lng: start.lng()
+                                });
+                                
+                                // Add intermediate points if distance is large (every ~15 meters)
+                                if (distance > 15) {
+                                    const numInterpolations = Math.floor(distance / 15);
+                                    for (let j = 1; j < numInterpolations; j++) {
+                                        const fraction = j / numInterpolations;
+                                        const interpolated = google.maps.geometry.spherical.interpolate(start, end, fraction);
+                                        trailPath.push({
+                                            lat: interpolated.lat(),
+                                            lng: interpolated.lng()
+                                        });
+                                    }
+                                }
+                            }
+                            
+                            // Add final point of last step
+                            if (points.length > 0) {
+                                const lastPoint = points[points.length - 1];
+                                trailPath.push({
+                                    lat: lastPoint.lat(),
+                                    lng: lastPoint.lng()
+                                });
+                            }
+                        });
+                        
+                        // Remove duplicate consecutive points
+                        trailPath = trailPath.filter((point, index) => {
+                            if (index === 0) return true;
+                            const prev = trailPath[index - 1];
+                            return point.lat !== prev.lat || point.lng !== prev.lng;
+                        });
+                        
+                        const waypointInfo = STATE.activeLoot.isWaypoint 
+                            ? `Waypoint ${STATE.currentWaypointIndex + 1}/${STATE.currentAdventurePath.waypoints.length}` 
+                            : 'Final Destination';
+                        
+                        console.log(`🎬 Trail mode (subroute): ${trailPath.length} waypoints to ${waypointInfo}`);
+                        console.log(`🚶 Current target: ${STATE.activeLoot.name}`);
+                        
+                        if (trailPath.length === 0) {
+                            console.error("❌ No valid trail path generated");
+                            alert("⚠️ Could not generate walking path. Target may be too close or unreachable.");
+                            stopTrailMode();
+                            return;
+                        }
+                        
+                        followTrailPath();
+                    } else {
+                        console.error("❌ Could not calculate trail path:", status);
+                        let errorMsg = "⚠️ Could not calculate walking route.";
+                        if (status === 'ZERO_RESULTS') {
+                            errorMsg = "⚠️ No walking route found. Target may be unreachable on foot.";
+                        } else if (status === 'OVER_QUERY_LIMIT') {
+                            errorMsg = "⚠️ Too many requests. Please wait a moment and try again.";
+                        }
+                        alert(errorMsg);
+                        stopTrailMode();
+                    }
+                });
+                return;
+            }
+
+            // OLD MODE: Calculate path from current position to target
+            const currentPos = STATE.streetView.getPosition();
+            const targetPos = STATE.activeLoot.coords;
+            
+            // Use Google Directions to get the walking path
+            const directionsService = new google.maps.DirectionsService();
+            
+            directionsService.route({
+                origin: currentPos,
+                destination: targetPos,
+                travelMode: google.maps.TravelMode.WALKING
+            }, (result, status) => {
+                if (status === 'OK') {
+                    // Extract path points from directions
+                    const route = result.routes[0];
+                    trailPath = [];
+                    
+                    route.legs[0].steps.forEach(step => {
+                        // Get waypoints along each step
+                        const points = step.path;
+                        
+                        // Interpolate between points for smoother motion
+                        for (let i = 0; i < points.length - 1; i++) {
+                            const start = points[i];
+                            const end = points[i + 1];
+                            
+                            // Calculate distance between points
+                            const distance = google.maps.geometry.spherical.computeDistanceBetween(start, end);
+                            
+                            // Add start point
+                            trailPath.push({
+                                lat: start.lat(),
+                                lng: start.lng()
+                            });
+                            
+                            // Add intermediate points if distance is large (every ~15 meters)
+                            if (distance > 15) {
+                                const numInterpolations = Math.floor(distance / 15);
+                                for (let j = 1; j < numInterpolations; j++) {
+                                    const fraction = j / numInterpolations;
+                                    const interpolated = google.maps.geometry.spherical.interpolate(start, end, fraction);
+                                    trailPath.push({
+                                        lat: interpolated.lat(),
+                                        lng: interpolated.lng()
+                                    });
+                                }
+                            }
+                        }
+                        
+                        // Add final point of last step
+                        if (points.length > 0) {
+                            const lastPoint = points[points.length - 1];
+                            trailPath.push({
+                                lat: lastPoint.lat(),
+                                lng: lastPoint.lng()
+                            });
+                        }
+                    });
+                    
+                    // Remove duplicate consecutive points
+                    trailPath = trailPath.filter((point, index) => {
+                        if (index === 0) return true;
+                        const prev = trailPath[index - 1];
+                        return point.lat !== prev.lat || point.lng !== prev.lng;
+                    });
+                    
+                    console.log(`🎬 Trail path calculated: ${trailPath.length} waypoints`);
+                    console.log(`🚶 Starting smooth walking animation...`);
+                    followTrailPath();
+                } else {
+                    console.error("❌ Could not calculate trail path:", status);
+                    stopTrailMode();
+                }
+            });
+        }
+
+        function followTrailPath() {
+            if (!trailModeActive) {
+                stopTrailMode();
+                return;
+            }
+            
+            if (currentPathStep >= trailPath.length - 1) {
+                console.log("✅ Reached end of trail path");
+                stopTrailMode();
+                return;
+            }
+            
+            if (!trailPath || trailPath.length === 0) {
+                console.error("❌ Trail path is empty");
+                stopTrailMode();
+                return;
+            }
+
+            const streetViewService = new google.maps.StreetViewService();
+            const currentPoint = trailPath[currentPathStep];
+            const nextPoint = trailPath[currentPathStep + 1];
+            
+            if (!currentPoint || !nextPoint) {
+                console.error(`❌ Invalid trail point at step ${currentPathStep}`);
+                currentPathStep++;
+                followTrailPath();
+                return;
+            }
+            
+            // Find nearest Street View panorama for current point
+            streetViewService.getPanorama({
+                location: new google.maps.LatLng(currentPoint.lat, currentPoint.lng),
+                radius: 50,
+                source: google.maps.StreetViewSource.OUTDOOR
+            }, (data, status) => {
+                if (status === 'OK' && data && data.location) {
+                    const startPanoPos = data.location.latLng;
+                    const startPano = data.location.pano;
+                    
+                    if (!startPano) {
+                        console.log(`⚠️ Invalid panorama at step ${currentPathStep}, skipping...`);
+                        currentPathStep++;
+                        followTrailPath();
+                        return;
+                    }
+                    
+                    // Calculate heading towards next waypoint
+                    const heading = google.maps.geometry.spherical.computeHeading(
+                        startPanoPos,
+                        new google.maps.LatLng(nextPoint.lat, nextPoint.lng)
+                    );
+                    
+                    // Smooth position and heading transition
+                    smoothTransitionToPanorama(startPano, heading, currentPoint, nextPoint);
+                    
+                } else {
+                    // Skip this point if no Street View available
+                    console.log(`⚠️ No Street View at step ${currentPathStep} (${currentPoint.lat}, ${currentPoint.lng}), skipping...`);
+                    currentPathStep++;
+                    
+                    // If we've skipped too many points, stop trail mode
+                    if (currentPathStep >= trailPath.length - 1) {
+                        console.log("⚠️ No Street View coverage found on path");
+                        alert("⚠️ Street View not available along this route. Trail mode stopped.");
+                        stopTrailMode();
+                        return;
+                    }
+                    
+                    followTrailPath();
+                }
+            });
+        }
+
+        function smoothTransitionToPanorama(panoId, targetHeading, startPoint, endPoint) {
+            // Smooth heading transition
+            const currentPov = STATE.streetView.getPov();
+            const startHeading = currentPov.heading;
+            const startPitch = currentPov.pitch;
+            
+            // Calculate shortest rotation path
+            let headingDiff = targetHeading - startHeading;
+            if (headingDiff > 180) headingDiff -= 360;
+            if (headingDiff < -180) headingDiff += 360;
+            
+            // Calculate distance for this step
+            const stepDistance = google.maps.geometry.spherical.computeDistanceBetween(
+                new google.maps.LatLng(startPoint.lat, startPoint.lng),
+                new google.maps.LatLng(endPoint.lat, endPoint.lng)
+            );
+            
+            // Adjust rotation speed based on turn angle (slower for sharp turns)
+            const turnSharpness = Math.abs(headingDiff);
+            const baseSteps = 40; // Doubled for slower rotation
+            const headingSteps = turnSharpness > 45 ? Math.round(baseSteps * 1.5) : baseSteps;
+            
+            // Smooth, stable rotation without bobbing for comfortable viewing
+            let headingStep = 0;
+            
+            const rotateInterval = setInterval(() => {
+                if (!trailModeActive) {
+                    clearInterval(rotateInterval);
+                    return;
+                }
+                
+                headingStep++;
+                const progress = headingStep / headingSteps;
+                
+                // Smooth easing for natural rotation (ease-in-out)
+                const easedProgress = progress < 0.5 
+                    ? 2 * progress * progress 
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                
+                const newHeading = startHeading + (headingDiff * easedProgress);
+                
+                // Keep pitch stable at 0 for smooth, comfortable viewing
+                STATE.streetView.setPov({
+                    heading: newHeading,
+                    pitch: 0
+                });
+                
+                if (headingStep >= headingSteps) {
+                    clearInterval(rotateInterval);
+                    // After heading is aligned, move to next panorama
+                    moveToNextPanorama(panoId, targetHeading, stepDistance);
+                }
+            }, 40); // 40ms per step for slower, more relaxed rotation
+        }
+
+        function moveToNextPanorama(targetPanoId, heading, stepDistance = 15) {
+            if (!targetPanoId || !STATE.streetView) {
+                console.error("❌ Invalid panorama or Street View not initialized");
+                stopTrailMode();
+                return;
+            }
+            
+            try {
+                // Set the panorama
+                STATE.streetView.setPano(targetPanoId);
+                STATE.streetView.setPov({
+                    heading: heading,
+                    pitch: 0
+                });
+                
+                // IMPORTANT: Update STATE.currentPos to track player position during trail mode
+                // This ensures collectItem() can check proximity correctly
+                const newPos = STATE.streetView.getPosition();
+                if (newPos) {
+                    STATE.currentPos.lat = newPos.lat();
+                    STATE.currentPos.lng = newPos.lng();
+                }
+            } catch (error) {
+                console.error("❌ Error setting panorama:", error);
+                currentPathStep++;
+                followTrailPath();
+                return;
+            }
+            
+            // Check distance to target and update AR overlay
+            const currentPos = STATE.streetView.getPosition();
+            if (currentPos && STATE.activeLoot && STATE.activeLoot.coords) {
+                const distanceToTarget = calculateDistance(
+                    currentPos.lat(),
+                    currentPos.lng(),
+                    STATE.activeLoot.coords.lat,
+                    STATE.activeLoot.coords.lng
+                );
+                
+                console.log(`🚶 Walking... ${Math.round(distanceToTarget)}m from target`);
+                
+                // Update AR overlay so loot box shows correctly
+                updateAROverlay();
+                
+                // Stop trail mode if within 50 meters of target
+                if (distanceToTarget < CONFIG.COLLECTION_RADIUS) {
+                    console.log(`✅ Arrived! Within ${CONFIG.COLLECTION_RADIUS}m of target - stopping trail mode`);
+                    console.log(`🎯 You can now collect the waypoint!`);
+                    stopTrailMode();
+                    
+                    // Update UI to show player is close
+                    const hintBox = document.getElementById('hint-box');
+                    if (hintBox) {
+                        hintBox.textContent = `🎯 TARGET NEARBY! ${Math.round(distanceToTarget)}m - Press SPACEBAR!`;
+                    }
+                    
+                    // Flash the loot box to draw attention
+                    const lootBox = document.getElementById('target-loot');
+                    if (lootBox) {
+                        lootBox.style.animation = 'pulse 1s infinite';
+                    }
+                    
+                    return;
+                }
+            }
+            
+            // Increment and continue after a brief pause
+            currentPathStep++;
+            
+            // Adaptive speed based on step distance (simulate varying walking speed)
+            // Slower, more relaxed walking pace
+            const baseDelay = 1500; // Increased from 800ms for slower pace
+            const distanceFactor = Math.min(stepDistance / 20, 1.8); // Scale based on distance
+            const delay = Math.round(baseDelay * distanceFactor);
+            
+            // Continue updating AR overlay while moving
+            const updateInterval = setInterval(() => {
+                if (!trailModeActive) {
+                    clearInterval(updateInterval);
+                    return;
+                }
+                updateAROverlay();
+            }, 100); // Update every 100ms during trail mode
+            
+            trailModeInterval = setTimeout(() => {
+                clearInterval(updateInterval);
+                if (trailModeActive) {
+                    followTrailPath();
+                }
+            }, delay);
+        }
+
+        function stopTrailMode() {
+            trailModeActive = false;
+            currentPathStep = 0;
+            trailPath = [];
+            
+            if (trailModeInterval) {
+                clearTimeout(trailModeInterval);
+                trailModeInterval = null;
+            }
+            
+            const btn = document.getElementById('trail-btn');
+            if (btn) {
+                btn.classList.remove('active');
+                btn.innerHTML = '<span class="btn-text">🎬 TRAIL MODE</span>';
+            }
+            
+            console.log("🎬 Trail Mode STOPPED");
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // EAGLE EYE MODE - RDR2 Style Tracking
+        // ═══════════════════════════════════════════════════════════
+        
+
+        
+        function calculateBearing(lat1, lng1, lat2, lng2) {
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const lat1Rad = lat1 * Math.PI / 180;
+            const lat2Rad = lat2 * Math.PI / 180;
+            
+            const y = Math.sin(dLng) * Math.cos(lat2Rad);
+            const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+                      Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
+            
+            let bearing = Math.atan2(y, x) * 180 / Math.PI;
+            return (bearing + 360) % 360;
+        }
+
+        window.addEventListener('load', initializeSystems);
+
+        window.addEventListener('error', (e) => {
+            console.error('Global error:', e.message);
+        });
+
+    </script>
+    
+    <!-- Load Adventure Path Data (162 waypoints across 9 locations) -->
+    <script src="adventure_paths_complete.js"></script>
+    <script src="adventure_paths_part2.js"></script>
+    <script src="adventure_paths_part3.js"></script>
+    
+    <!-- OPTIONAL: Load Dynamic Adventure Path Generator -->
+    <script src="dynamic_adventure_paths.js"></script>
+    <script src="dynamic_integration.js"></script>
+    
+    <!-- Curated Photos Database -->
+    <script src="curated_photos.js"></script>
+    
+    <!-- Dynamic Photo Loader -->
+    <script src="dynamic_photo_loader.js"></script>
+    
+    <!-- Merge adventure path data after all files load -->
+    <script>
+        // Global path manager and photo loader
+        let pathManager = null;
+        let photoLoader = null;
+        
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (typeof ADVENTURE_PATHS_COMPLETE !== 'undefined' && 
+                typeof ADVENTURE_PATHS_PART2 !== 'undefined' && 
+                typeof ADVENTURE_PATHS_PART3 !== 'undefined') {
+                
+                // Merge all three data sources
+                ADVENTURE_PATHS = {
+                    ...ADVENTURE_PATHS_COMPLETE,
+                    ...ADVENTURE_PATHS_PART2,
+                    ...ADVENTURE_PATHS_PART3
+                };
+                
+                const locationCount = Object.keys(ADVENTURE_PATHS).length;
+                console.log(`✅ Adventure Paths Loaded: ${locationCount} locations`);
+                console.log('📍 Available locations:', Object.keys(ADVENTURE_PATHS));
+                
+                // Count total paths and waypoints
+                let totalPaths = 0;
+                let totalWaypoints = 0;
+                Object.values(ADVENTURE_PATHS).forEach(location => {
+                    if (location.paths) {
+                        totalPaths += location.paths.length;
+                        location.paths.forEach(path => {
+                            if (path.waypoints) totalWaypoints += path.waypoints.length;
+                        });
+                    }
+                });
+                console.log(`🗺️ Total: ${totalPaths} paths, ${totalWaypoints} waypoints`);
+            } else {
+                console.error('❌ Adventure path files not loaded properly');
+            }
+            
+            // Initialize dynamic path manager if available
+            if (typeof AdventurePathManager !== 'undefined') {
+                console.log('🎲 Dynamic adventure path system available');
+                console.log('💡 To enable: Set USE_DYNAMIC_PATHS = true in code');
+            }
+        });
+    </script>
+</body>
+</html>
+
