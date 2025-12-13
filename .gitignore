@@ -1,5 +1,7 @@
 # Environment variables - NEVER COMMIT
 .env
+Secret.txt
+config.unsplash.js
 
 # Dependencies
 node_modules/
