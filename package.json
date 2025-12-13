@@ -1,0 +1,22 @@
+{
+  "name": "ash-twin-project",
+  "version": "1.0.0",
+  "description": "A browser-based Google Street View treasure hunt game with automated Trail Mode navigation.",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,html,css,md,json}\"",
+    "format:check": "prettier --check \"**/*.{js,html,css,md,json}\""
+  },
+  "devDependencies": {
+    "eslint": "^8.54.0",
+    "prettier": "^3.1.0"
+  },
+  "keywords": [
+    "game",
+    "streetview",
+    "treasure-hunt"
+  ],
+  "author": "",
+  "license": "MIT"
+}

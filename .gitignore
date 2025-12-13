@@ -5,6 +5,7 @@
 Secret.txt
 secret.txt
 config.js
+config.unsplash.js
 secrets.js
 
 # OS files
@@ -23,6 +24,10 @@ desktop.ini
 *.log
 *.tmp
 tmp_*
+
+# Node modules
+node_modules/
+package-lock.json
 
 # Executables
 *.exe
