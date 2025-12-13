@@ -3,6 +3,19 @@
 Secret.txt
 config.unsplash.js
 
+# Executables
+*.exe
+*.dll
+
+# Test files
+tmp_rovodev_*
+test_*.html
+test-*.html
+
+# Backups
+*.backup
+*.bak
+
 # Dependencies
 node_modules/
 

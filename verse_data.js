@@ -4,8 +4,7 @@
 
 const ATP_CONFIG = {
     // API CONFIG
-    CESIUM_TOKEN:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkZDliZmU3YS01YmQ3LTQ2ZGMtOTI4Yy1lZTMzZDMxOWIwMDUiLCJpZCI6MzY2NzI0LCJpYXQiOjE3NjQ4NjU3NDV9.Ajfr3pZSAk1F4xg0M2kyLgkEAFYmrYyCSlUPuPmvYQ4', // Paste from snippets
+    CESIUM_TOKEN: 'YOUR_CESIUM_TOKEN_HERE', // Get from https://ion.cesium.com/tokens
 
     // GAME SETTINGS
     LOOP_DURATION: 22, // Seconds (Speedrun Mode)
