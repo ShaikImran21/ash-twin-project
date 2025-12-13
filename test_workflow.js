@@ -1,14 +1,13 @@
-// Test file to trigger GitHub Actions workflows
+// Test file to trigger GitHub Actions workflows - FIXED VERSION
 
-function testFunction(param1,param2) {
-  var oldStyle = "testing workflows"
-  let unused = "this is unused";
-  
-    if(param1=="test"){
-        console.log("This will fail linting and formatting checks")
+function testFunction(param1, param2) {
+    const modernStyle = 'testing workflows';
+
+    if (param1 === 'test') {
+        console.log('This will pass linting and formatting checks');
     }
-  
-  return "missing semicolon"
+
+    return 'has semicolon';
 }
 
-const arrow=(x)=>{return x*2}
+const arrow = x => x * 2;
